@@ -66,7 +66,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * The task scheduler for sending and receiving messages for the Device Client
  */
-public final class DeviceIO
+public final class DeviceIO implements MessageArrivalListener
 {
     /** The state of the IoT Hub client's connection with the IoT Hub. */
     protected enum IotHubClientState
@@ -125,7 +125,7 @@ public final class DeviceIO
             this.config.setUseWebsocket(true);
         }
 
-        this.transport = new IotHubTransport(config);
+        this.transport = new IotHubTransport(config, this);
 
         /* Codes_SRS_DEVICE_IO_21_037: [The constructor shall initialize the `sendPeriodInMilliseconds` with default value of 10 milliseconds.] */
         this.sendPeriodInMilliseconds = sendPeriodInMilliseconds;
@@ -199,9 +199,13 @@ public final class DeviceIO
         /* Codes_SRS_DEVICE_IO_21_013: [The open shall schedule send tasks to run every SEND_PERIOD_MILLIS milliseconds.] */
         this.taskScheduler.scheduleAtFixedRate(this.sendTask, 0,
                 sendPeriodInMilliseconds, TimeUnit.MILLISECONDS);
+
         /* Codes_SRS_DEVICE_IO_21_014: [The open shall schedule receive tasks to run every receivePeriodInMilliseconds milliseconds.] */
-        this.taskScheduler.scheduleAtFixedRate(this.receiveTask, 0,
-                receivePeriodInMilliseconds, TimeUnit.MILLISECONDS);
+        if (this.protocol == IotHubClientProtocol.HTTPS)
+        {
+            this.taskScheduler.scheduleAtFixedRate(this.receiveTask, 0,
+                    receivePeriodInMilliseconds, TimeUnit.MILLISECONDS);
+        }
 
         /* Codes_SRS_DEVICE_IO_21_016: [The open shall set the `state` as `CONNECTED`.] */
         this.state = IotHubClientState.OPEN;
@@ -328,7 +332,7 @@ public final class DeviceIO
         /* Codes_SRS_DEVICE_IO_21_027: [The setReceivePeriodInMilliseconds shall store the new receive period in milliseconds.] */
         this.receivePeriodInMilliseconds = newIntervalInMilliseconds;
 
-        /* Codes_SRS_DEVICE_IO_21_028: [If the task scheduler already exists, the setReceivePeriodInMilliseconds shall change the `scheduleAtFixedRate` for the receiveTask to the new value.] */
+        /* Codes_SRS_DEVICE_IO_21_028: [If the task scheduler already exists, the setReceivePeriodInMilliseconds shall change the `scheduleAtFxedRate` for the receiveTask to the new value.] */
         if(this.taskScheduler != null)
         {
             /* Codes_SRS_DEVICE_IO_21_029: [If the `receiveTask` is null, the setReceivePeriodInMilliseconds shall throw IOException.] */
@@ -433,5 +437,14 @@ public final class DeviceIO
     public void registerConnectionStatusChangeCallback(IotHubConnectionStatusChangeCallback statusChangeCallback, Object callbackContext)
     {
         this.transport.registerConnectionStatusChangeCallback(statusChangeCallback, callbackContext);
+    }
+
+    @Override
+    public void onMessageArrived()
+    {
+        if (this.protocol != IotHubClientProtocol.HTTPS)
+        {
+            this.taskScheduler.schedule(this.receiveTask, 0, TimeUnit.MILLISECONDS);
+        }
     }
 }

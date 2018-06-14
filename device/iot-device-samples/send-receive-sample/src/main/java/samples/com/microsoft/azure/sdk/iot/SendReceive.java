@@ -70,10 +70,10 @@ public class SendReceive
                     res = IotHubMessageResult.COMPLETE;
                     break;
                 case 1:
-                    res = IotHubMessageResult.ABANDON;
+                    res = IotHubMessageResult.COMPLETE;
                     break;
                 case 2:
-                    res = IotHubMessageResult.REJECT;
+                    res = IotHubMessageResult.COMPLETE;
                     break;
                 default:
                     // should never happen.
@@ -134,8 +134,7 @@ public class SendReceive
      * args[3] = path to certificate to enable one-way authentication over ssl for amqps (optional, default shall be used if unspecified).
      */
   
-    public static void main(String[] args)
-            throws IOException, URISyntaxException
+    public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException
     {
         System.out.println("Starting...");
         System.out.println("Beginning setup.");
@@ -302,8 +301,7 @@ public class SendReceive
         
         System.out.println("In receive mode. Waiting for receiving C2D messages. Press ENTER to close");
     
-        Scanner scanner = new Scanner(System.in);
-        scanner.nextLine();
+        Thread.sleep(3000);
 
         // close the connection        
         System.out.println("Closing"); 

@@ -58,6 +58,9 @@ public class DeviceIOTest
     @Mocked
     IotHubEventCallback mockedIotHubEventCallback;
 
+    @Mocked
+    MessageArrivalListener mockedMessageArrivalListener;
+
     private final static long SEND_PERIOD_MILLIS = 10L;
     private final static long RECEIVE_PERIOD_MILLIS_AMQPS = 10L;
     private final static long RECEIVE_PERIOD_MILLIS_MQTT = 10L;
@@ -68,7 +71,7 @@ public class DeviceIOTest
         new NonStrictExpectations()
         {
             {
-                new IotHubTransport(mockConfig);
+                new IotHubTransport(mockConfig, mockedMessageArrivalListener);
                 result = mockedTransport;
             }
         };

@@ -64,6 +64,8 @@ public class IotHubTransport implements IotHubListener
     private long reconnectionAttemptStartTimeMillis;
     private ScheduledExecutorService taskScheduler;
 
+    private MessageArrivalListener messageArrivalListener;
+
     private final CustomLogger logger;
 
     final private Object reconnectionLock = new Object();
@@ -73,7 +75,7 @@ public class IotHubTransport implements IotHubListener
      * @param defaultConfig the config used for opening connections, retrieving retry policy, and checking protocol
      * @throws IllegalArgumentException if defaultConfig is null
      */
-    public IotHubTransport(DeviceClientConfig defaultConfig) throws IllegalArgumentException
+    public IotHubTransport(DeviceClientConfig defaultConfig, MessageArrivalListener messageArrivalListener) throws IllegalArgumentException
     {
         if (defaultConfig == null)
         {
@@ -89,7 +91,7 @@ public class IotHubTransport implements IotHubListener
         // current retry attempt to 0.]
         this.connectionStatus = IotHubConnectionStatus.DISCONNECTED;
         this.currentReconnectionAttempt = 0;
-
+        this.messageArrivalListener = messageArrivalListener;
         this.logger = new CustomLogger(this.getClass());
     }
 
@@ -166,6 +168,7 @@ public class IotHubTransport implements IotHubListener
             logger.LogInfo("Message with hashcode %s is received from IotHub on %s, method name is onMessageReceived",
                     message.hashCode(), new Date());
             this.receivedMessagesQueue.add(message);
+            this.messageArrivalListener.onMessageArrived();
         }
         else if (e != null)
         {
