@@ -352,7 +352,7 @@ public class HttpsHsmClientTest
                 mockedHttpsResponse.getBody();
                 result = "some trust bundle".getBytes();
 
-                new TrustBundleResponse("some trust bundle");
+                TrustBundleResponse.fromJson("some trust bundle");
                 result = mockedTrustBundleResponse;
             }
         };

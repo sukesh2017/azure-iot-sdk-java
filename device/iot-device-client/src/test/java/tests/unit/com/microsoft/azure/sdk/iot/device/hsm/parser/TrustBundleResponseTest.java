@@ -81,7 +81,7 @@ public class TrustBundleResponseTest
     public void constructorSavesCertificates()
     {
         //act
-        TrustBundleResponse response = new TrustBundleResponse(jsonWithTrustedCertificates);
+        TrustBundleResponse response = TrustBundleResponse.fromJson(jsonWithTrustedCertificates);
 
         String certificates = Deencapsulation.getField(response, "certificates");
 
@@ -94,7 +94,7 @@ public class TrustBundleResponseTest
     public void constructorThrowsIfJsonMissingCertificates()
     {
         //act
-        TrustBundleResponse response = new TrustBundleResponse(jsonWithoutTrustedCertificates);
+        TrustBundleResponse response = TrustBundleResponse.fromJson(jsonWithoutTrustedCertificates);
     }
 
     //Tests_SRS_TRUSTBUNDLERESPONSE_34_003: [This constructor shall create a new TrustBundleResponse from json.]
@@ -102,7 +102,7 @@ public class TrustBundleResponseTest
     public void getCertificatesReturnsCertificates()
     {
         //arrange
-        TrustBundleResponse response = new TrustBundleResponse(jsonWithTrustedCertificates);
+        TrustBundleResponse response = TrustBundleResponse.fromJson(jsonWithTrustedCertificates);
 
         //act
         String certificates = response.getCertificates();
