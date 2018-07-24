@@ -240,8 +240,8 @@ public class ModuleClient extends InternalClient
                 {
                     //Codes_SRS_MODULECLIENT_34_032: [This function shall retrieve the trust bundle from the hsm and set them in the module client.]
                     TrustBundleProvider trustBundleProvider = new HttpsHsmTrustBundleProvider();
-                    String trustCertificates = trustBundleProvider.getTrustBundleCerts(edgedUri, DEFAULT_API_VERSION);
-                    moduleClient.setTrustedCertificates(trustCertificates);
+                    String trustedCertificates = trustBundleProvider.getTrustBundleCerts(edgedUri, DEFAULT_API_VERSION);
+                    moduleClient.setTrustedCertificates(trustedCertificates);
                 }
 
                 return moduleClient;

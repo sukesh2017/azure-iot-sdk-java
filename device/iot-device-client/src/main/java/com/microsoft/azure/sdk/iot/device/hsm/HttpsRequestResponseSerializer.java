@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -36,7 +35,7 @@ public class HttpsRequestResponseSerializer
      * @throws URISyntaxException if the request's url cannot be parsed
      * @throws IllegalArgumentException if the provided httpsRequest is null or has a null request url
      */
-    public static byte[] serializeRequest(HttpsRequest httpsRequest) throws UnsupportedEncodingException, URISyntaxException, IllegalArgumentException
+    public static byte[] serializeRequest(HttpsRequest httpsRequest, String path, String queryString) throws UnsupportedEncodingException, URISyntaxException, IllegalArgumentException
     {
         if (httpsRequest == null)
         {
@@ -57,21 +56,21 @@ public class HttpsRequestResponseSerializer
         // <header>: <value>
         // <header>: <value1>; <value2>
         // .]
-        String updatedHost = preProcessRequest(httpsRequest);
-        URI requestUri = new URI(httpsRequest.getRequestUrl().toString());
-        requestUri = new URI(requestUri.getScheme(), requestUri.getUserInfo(), updatedHost, requestUri.getPort(), requestUri.getPath(), requestUri.getQuery(), requestUri.getFragment());
+
+        httpsRequest.setHeaderField("Connection", "close");
+
+        String updatedPath = preProcessRequestPath(path);
+        URI requestUri = new URI(updatedPath);
 
         StringBuilder builder = new StringBuilder();
         builder.append(httpsRequest.getHttpMethod());
         builder.append(SP);
 
-        if (requestUri.getQuery() != null && !requestUri.getQuery().isEmpty())
+        builder.append(updatedPath);
+
+        if (queryString != null && !queryString.isEmpty())
         {
-            builder.append(requestUri.isAbsolute() ? requestUri.getPath() + "?" + requestUri.getQuery() : URLEncoder.encode(requestUri.toString(), "UTF-8"));
-        }
-        else
-        {
-            builder.append(requestUri.isAbsolute() ? requestUri.getPath() : URLEncoder.encode(requestUri.toString(), "UTF-8"));
+            builder.append("?" + queryString);
         }
 
         builder.append(SP);
@@ -169,18 +168,10 @@ public class HttpsRequestResponseSerializer
         return new HttpsResponse(statusCode, body, headerFields, errorReason);
     }
 
-    private static String preProcessRequest(HttpsRequest httpsRequest)
+    private static String preProcessRequestPath(String path)
     {
-        httpsRequest.setHeaderField("Connection", "close");
-
-        String hostname = httpsRequest.getRequestUrl().getHost();
-        if (hostname == null || hostname.isEmpty())
-        {
-            String dnsSafeHostName = httpsRequest.getRequestUrl().toString().replace("[", "").replace("]", "");
-            return dnsSafeHostName + ":" + httpsRequest.getRequestUrl().getPort();
-        }
-
-        return hostname;
+        String dnsSafePath = path.replace("[", "").replace("]", "");
+        return dnsSafePath;
     }
 
     private static Map<String, List<String>> readHeaderFields(BufferedReader bufferedReader) throws IOException

@@ -14,12 +14,12 @@ public class SignResponse
     private static final String DIGEST_NAME = "digest";
     @Expose(serialize = false, deserialize = true)
     @SerializedName(DIGEST_NAME)
-    private byte[] digest;
+    public String digest;
 
-    public byte[] getDigest()
+    public String getDigest()
     {
         // Codes_SRS_HTTPHSMSIGNRESPONSE_34_001: [This function shall return the saved digest.]
-        return digest;
+        return this.digest;
     }
 
     //empty constructor for Gson to use
@@ -27,6 +27,9 @@ public class SignResponse
 
     public static SignResponse fromJson(String json)
     {
+        System.out.println("Creating sign response from json, json:");
+        System.out.println(json);
+
         return new GsonBuilder().create().fromJson(json, SignResponse.class);
     }
 }

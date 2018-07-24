@@ -5,7 +5,9 @@
 
 package com.microsoft.azure.sdk.iot.device.hsm;
 
+import com.microsoft.azure.sdk.iot.deps.transport.http.HttpMethod;
 import com.microsoft.azure.sdk.iot.deps.transport.http.HttpRequest;
+import com.microsoft.azure.sdk.iot.deps.transport.http.HttpResponse;
 import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
 import com.microsoft.azure.sdk.iot.device.hsm.parser.ErrorResponse;
 import com.microsoft.azure.sdk.iot.device.hsm.parser.SignRequest;
@@ -27,8 +29,9 @@ public class HttpsHsmClient
     private String baseUrl;
     private String scheme;
 
-    private static final String HttpsScheme = "https";
-    private static final String UnixScheme = "unix";
+    private static final String HTTPS_SCHEME = "https";
+    private static final String HTTP_SCHEME = "http";
+    private static final String UNIX_SCHEME = "unix";
 
     /**
      * Client object for sending sign requests to an HSM unit
@@ -41,11 +44,38 @@ public class HttpsHsmClient
         this.baseUrl = baseUrl;
         URI uri = new URI(baseUrl);
         this.scheme = uri.getScheme();
+
+        //URL class does not have a url stream handler for unix scheme by default. We only need this class for parsing
+        // a url rather than opening any connections, so this psuedo-stub class is used.
+        if (this.scheme.equalsIgnoreCase(UNIX_SCHEME))
+        {
+            URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory()
+            {
+                @Override
+                public URLStreamHandler createURLStreamHandler(String protocol)
+                {
+                    if (protocol.equalsIgnoreCase(UNIX_SCHEME))
+                    {
+                        return new URLStreamHandler()
+                        {
+                            @Override
+                            protected URLConnection openConnection(URL u)
+                            {
+                                //unix connection should never be opened using this method
+                                throw new UnsupportedOperationException("Cannot use URL class to open a unix connection");
+                            }
+                        };
+                    }
+
+                    return null;
+                }
+            });
+        }
     }
 
     /**
      * Send a sign request to the HSM using the provided parameters and return the HSM's response
-     * @param api_version the api version to use
+     * @param apiVersion the api version to use
      * @param moduleName The name of the module for which the sign request is requesting access to
      * @param signRequest the request to send
      * @param generationId the generation id
@@ -55,7 +85,7 @@ public class HttpsHsmClient
      * @throws URISyntaxException If the request URI is not a valid URI
      * @throws HsmException If there was a problem interacting with the HSM
      */
-    public SignResponse sign(String api_version, String moduleName, SignRequest signRequest, String generationId) throws IOException, TransportException, URISyntaxException, HsmException
+    public SignResponse sign(String apiVersion, String moduleName, SignRequest signRequest, String generationId) throws IOException, TransportException, URISyntaxException, HsmException
     {
         // Codes_SRS_HSMHTTPCLIENT_34_002: [This function shall build an http request with the url in the format
         // <base url>/modules/<url encoded name>/genid/<url encoded gen id>/sign?api-version=<url encoded api version>.]
@@ -64,41 +94,32 @@ public class HttpsHsmClient
         urlBuilder.append("/modules/" + URLEncoder.encode(moduleName, "UTF-8"));
         urlBuilder.append("/genid/" + URLEncoder.encode(generationId, "UTF-8"));
         urlBuilder.append("/sign?");
-        urlBuilder.append("api-version=").append(URLEncoder.encode(api_version, "UTF-8"));
+        urlBuilder.append("api-version=").append(URLEncoder.encode(apiVersion, "UTF-8"));
 
         byte[] body = signRequest.toJson().getBytes();
-
+        
         HttpsRequest httpsRequest = new HttpsRequest(new URL(urlBuilder.toString()), HttpsMethod.POST, body, TransportUtils.USER_AGENT_STRING);
+        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, urlBuilder.toString(),"/modules/" + moduleName + "/sign", apiVersion);
 
-        // Codes_SRS_HSMHTTPCLIENT_34_003: [This function shall build an http request with headers ContentType and Accept with value application/json.]
-        httpsRequest.setHeaderField("ContentType", "application/json");
-        httpsRequest.setHeaderField("Accept", "application/json");
-
-        HttpsResponse response = null;
-        if (this.scheme.equalsIgnoreCase(HttpsScheme))
-        {
-            response = httpsRequest.send();
-        }
-        else if (this.scheme.equalsIgnoreCase(UnixScheme))
-        {
-            // Codes_SRS_HSMHTTPCLIENT_34_006: [If the scheme of the provided url is Unix, this function shall send the http request using unix domain sockets.]
-            response = sendHttpRequestUsingUnixSocket(httpsRequest, urlBuilder.toString());
-        }
-        else
-        {
-            throw new UnsupportedOperationException("unrecognized URI scheme. Only HTTPS and UNIX are supported");
-        }
-
+        int responseCode = response.getStatus();
         String responseBody = new String(response.getBody());
-        switch (response.getStatus())
+        switch (responseCode)
         {
             case 200:
                 // Codes_SRS_HSMHTTPCLIENT_34_004: [If the response from the http call is 200, this function shall return the SignResponse built from the response body json.]
                 return SignResponse.fromJson(responseBody);
             default:
+                String exceptionMessage = "HttpsHsmClient received status code " + responseCode + " from provided uri.";
+                ErrorResponse errorResponse = ErrorResponse.fromJson(responseBody);
+                if (errorResponse != null)
+                {
+                    exceptionMessage = exceptionMessage + " Error response message: " + errorResponse.getMessage();
+                }
+
                 // Codes_SRS_HSMHTTPCLIENT_34_005: [If the response from the http call is not 200, this function shall throw an HsmException.]
-                throw new HsmException("HttpsHsmClient received status code " + response.getStatus() + " from provided uri. Error Message: " + ErrorResponse.fromJson(responseBody).getMessage());
+                throw new HsmException(exceptionMessage);
         }
+
     }
 
     /**
@@ -110,7 +131,7 @@ public class HttpsHsmClient
      * @throws MalformedURLException if a proper URL cannot be constructed due to the provided api version
      * @throws HsmException if the hsm rejects the request for any reason
      */
-    public TrustBundleResponse getTrustBundle(String apiVersion) throws UnsupportedEncodingException, TransportException, MalformedURLException, HsmException
+    public TrustBundleResponse getTrustBundle(String apiVersion) throws IOException, TransportException, HsmException, URISyntaxException
     {
         if (apiVersion == null || apiVersion.isEmpty())
         {
@@ -126,20 +147,57 @@ public class HttpsHsmClient
         urlBuilder.append("api-version=").append(URLEncoder.encode(apiVersion, "UTF-8"));
 
         // Codes_SRS_HSMHTTPCLIENT_34_009: [This function shall send a GET http request to the built url.]
-        HttpsRequest request = new HttpsRequest(new URL(urlBuilder.toString()), HttpsMethod.GET, null, TransportUtils.USER_AGENT_STRING);
-        HttpsResponse response = request.send();
+        HttpsRequest httpsRequest = new HttpsRequest(new URL(urlBuilder.toString()), HttpsMethod.GET, new byte[0], TransportUtils.USER_AGENT_STRING);
+        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, urlBuilder.toString(), "/trust-bundle", apiVersion);
 
         int statusCode = response.getStatus();
+        String body = response.getBody() != null ? new String(response.getBody()) : "";
         if (statusCode == 200)
         {
+            System.out.println("Received 200 from hsm on trust bundle request");
             // Codes_SRS_HSMHTTPCLIENT_34_010: [If the response from the http request is 200, this function shall return the trust bundle response.]
-            return new TrustBundleResponse(new String(response.getBody()));
+            return TrustBundleResponse.fromJson(body);
         }
         else
         {
+            System.out.println("Received " + statusCode + " from hsm on trust bundle request");
             // Codes_SRS_HSMHTTPCLIENT_34_011: [If the response from the http request is not 200, this function shall throw an HSMException.]
-            ErrorResponse errorResponse = ErrorResponse.fromJson(new String(response.getBody()));
-            throw new HsmException("Received error from hsm with status code " + statusCode + " and message " + errorResponse.getMessage());
+            ErrorResponse errorResponse = ErrorResponse.fromJson(body);
+            if (errorResponse != null)
+            {
+                throw new HsmException("Received error from hsm with status code " + statusCode + " and message " + errorResponse.getMessage());
+            }
+            else
+            {
+                throw new HsmException("Received error from hsm with status code " + statusCode);
+            }
+        }
+    }
+
+    private HttpsResponse sendRequestBasedOnScheme(HttpsRequest httpsRequest, String url, String path, String apiVersion) throws TransportException, IOException, URISyntaxException
+    {
+        if (scheme.equalsIgnoreCase(UNIX_SCHEME) || scheme.equalsIgnoreCase(HTTPS_SCHEME) || scheme.equalsIgnoreCase(HTTP_SCHEME))
+        {
+            // Codes_SRS_HSMHTTPCLIENT_34_003: [This function shall build an http request with headers ContentType and Accept with value application/json.]
+            httpsRequest.setHeaderField("ContentType", "application/json");
+            httpsRequest.setHeaderField("Accept", "application/json");
+
+            HttpsResponse response = null;
+            if (this.scheme.equalsIgnoreCase(HTTPS_SCHEME) || this.scheme.equalsIgnoreCase(HTTP_SCHEME))
+            {
+                response = httpsRequest.send();
+            }
+            else if (this.scheme.equalsIgnoreCase(UNIX_SCHEME))
+            {
+                // Codes_SRS_HSMHTTPCLIENT_34_006: [If the scheme of the provided url is Unix, this function shall send the http request using unix domain sockets.]
+                response = sendHttpRequestUsingUnixSocket(httpsRequest, url, path, "apiVersion=" + apiVersion);
+            }
+
+            return response;
+        }
+        else
+        {
+            throw new UnsupportedOperationException("unrecognized URI scheme. Only HTTPS, HTTP and UNIX are supported");
         }
     }
 
@@ -151,10 +209,10 @@ public class HttpsHsmClient
      * @throws IOException If the unix socket cannot be reached
      * @throws URISyntaxException the the url cannot be parsed
      */
-    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String url) throws IOException, URISyntaxException
+    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String url, String path, String queryString) throws IOException, URISyntaxException
     {
         //write to socket
-        byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest);
+        byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, path, queryString);
         UnixSocketAddress address = new UnixSocketAddress(url);
         UnixSocketChannel channel = UnixSocketChannel.open(address);
         PrintWriter writer = new PrintWriter(Channels.newOutputStream(channel));
