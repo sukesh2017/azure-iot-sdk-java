@@ -49,7 +49,7 @@ public class HttpsHsmClient
         // a url rather than opening any connections, so this psuedo-stub class is used.
         if (this.scheme.equalsIgnoreCase(UNIX_SCHEME))
         {
-            URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory()
+            URLStreamHandlerFactory fac = new URLStreamHandlerFactory()
             {
                 @Override
                 public URLStreamHandler createURLStreamHandler(String protocol)
@@ -69,7 +69,8 @@ public class HttpsHsmClient
 
                     return null;
                 }
-            });
+            };
+			URL.setURLStreamHandlerFactory(fac);
         }
     }
 
