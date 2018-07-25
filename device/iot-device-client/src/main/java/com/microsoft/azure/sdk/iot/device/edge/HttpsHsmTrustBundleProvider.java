@@ -40,9 +40,6 @@ public class HttpsHsmTrustBundleProvider implements TrustBundleProvider
         // Codes_SRS_TRUSTBUNDLEPROVIDER_34_002: [This function shall invoke getTrustBundle on the HttpsHsmClient and return the resulting certificates.]
         TrustBundleResponse response = httpsHsmClient.getTrustBundle(apiVersion);
 
-        System.out.println("Successfully received trust bundle from hsm:");
-        System.out.println(response.getCertificates());
-
         return response.getCertificates();
     }
 }

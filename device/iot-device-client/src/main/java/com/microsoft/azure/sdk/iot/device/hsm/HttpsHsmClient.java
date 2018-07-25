@@ -156,13 +156,11 @@ public class HttpsHsmClient
         String body = response.getBody() != null ? new String(response.getBody()) : "";
         if (statusCode == 200)
         {
-            System.out.println("Received 200 from hsm on trust bundle request");
             // Codes_SRS_HSMHTTPCLIENT_34_010: [If the response from the http request is 200, this function shall return the trust bundle response.]
             return TrustBundleResponse.fromJson(body);
         }
         else
         {
-            System.out.println("Received " + statusCode + " from hsm on trust bundle request");
             // Codes_SRS_HSMHTTPCLIENT_34_011: [If the response from the http request is not 200, this function shall throw an HSMException.]
             ErrorResponse errorResponse = ErrorResponse.fromJson(body);
             if (errorResponse != null)
