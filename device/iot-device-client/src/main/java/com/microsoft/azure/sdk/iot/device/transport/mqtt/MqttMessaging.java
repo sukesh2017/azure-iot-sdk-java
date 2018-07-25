@@ -105,21 +105,6 @@ public class MqttMessaging extends Mqtt
             separatorNeeded = true;
         }
 
-        if (message.getUserId() != null)
-        {
-            if (separatorNeeded)
-            {
-                stringBuilder.append(MESSAGE_PROPERTY_SEPARATOR);
-            }
-
-            //Codes_SRS_MqttMessaging_34_030: [If the message has a UserId, this method shall append that userId to publishTopic before publishing using the key name `$.uid`.]
-            stringBuilder.append(USER_ID);
-            stringBuilder.append(MESSAGE_PROPERTY_KEY_VALUE_SEPARATOR);
-            stringBuilder.append(message.getUserId());
-
-            separatorNeeded = true;
-        }
-
         if (message.getTo() != null)
         {
             if (separatorNeeded)
@@ -150,33 +135,6 @@ public class MqttMessaging extends Mqtt
             separatorNeeded = true;
         }
 
-        if (message.getConnectionDeviceId() != null)
-        {
-            if (separatorNeeded)
-            {
-                stringBuilder.append(MESSAGE_PROPERTY_SEPARATOR);
-            }
-
-            stringBuilder.append(CONNECTION_DEVICE_ID);
-            stringBuilder.append(MESSAGE_PROPERTY_KEY_VALUE_SEPARATOR);
-            stringBuilder.append(message.getConnectionDeviceId());
-
-            separatorNeeded = true;
-        }
-
-        if (message.getConnectionModuleId() != null)
-        {
-            if (separatorNeeded)
-            {
-                stringBuilder.append(MESSAGE_PROPERTY_SEPARATOR);
-            }
-
-            stringBuilder.append(CONNECTION_MODULE_ID);
-            stringBuilder.append(MESSAGE_PROPERTY_KEY_VALUE_SEPARATOR);
-            stringBuilder.append(message.getConnectionDeviceId());
-
-            separatorNeeded = true;
-        }
 
         for (MessageProperty property : message.getProperties())
         {
