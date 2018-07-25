@@ -70,7 +70,12 @@ public class HttpsHsmClient
                     return null;
                 }
             };
-			URL.setURLStreamHandlerFactory(fac);
+			System.out.printf("Setting factory%n");
+			try {
+				URL.setURLStreamHandlerFactory(fac);	
+			} catch (Error e) {
+				System.out.printf("Ignoring factory error%n");
+			}
         }
     }
 
