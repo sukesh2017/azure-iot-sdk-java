@@ -45,10 +45,12 @@ public class HttpsHsmClient
         URI uri = new URI(baseUrl);
         this.scheme = uri.getScheme();
 
-        //URL class does not have a url stream handler for unix scheme by default. We only need this class for parsing
+        //URL class does not have a url stream handler for unix scheme by default. We need this class for parsing
         // a url rather than opening any connections, so this psuedo-stub class is used.
         if (this.scheme.equalsIgnoreCase(UNIX_SCHEME))
         {
+            // Codes_SRS_HSMHTTPCLIENT_34_012: [If the provided baseUrl uses the unix scheme, this constructor shall set
+            // a stub url stream handler factory to handle that unix scheme.]
             URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory()
             {
                 @Override

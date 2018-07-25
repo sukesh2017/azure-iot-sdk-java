@@ -70,6 +70,9 @@ public class HttpsHsmClientTest
     @Mocked
     TrustBundleResponse mockedTrustBundleResponse;
 
+    @Mocked
+    URLStreamHandlerFactory mockedURLStreamHandlerFactory;
+
     private static final String expectedBaseUrl = "some.base.url";
     private static final String expectedApiVersion = "1.2.3";
     private static final String expectedName = "someModuleName";
@@ -101,6 +104,36 @@ public class HttpsHsmClientTest
         assertEquals(expectedBaseUrl, Deencapsulation.getField(client, "baseUrl"));
     }
 
+    // Tests_SRS_HSMHTTPCLIENT_34_012: [If the provided baseUrl uses the unix scheme, this constructor shall set
+    // a stub url stream handler factory to handle that unix scheme.]
+    @Test
+    public void constructorWithUnixScheme(@Mocked final URI mockedURI) throws TransportException, UnsupportedEncodingException, MalformedURLException, URISyntaxException
+    {
+        //act
+        new NonStrictExpectations()
+        {
+            {
+                new URI(expectedBaseUrl);
+                result = mockedURI;
+
+                mockedURI.getScheme();
+                result = expectedSchemeUnix;
+
+                URL.setURLStreamHandlerFactory((URLStreamHandlerFactory) any);
+            }
+        };
+        HttpsHsmClient client = new HttpsHsmClient(expectedBaseUrl);
+
+        //assert
+        assertEquals(expectedBaseUrl, Deencapsulation.getField(client, "baseUrl"));
+        new Verifications()
+        {
+            {
+                URL.setURLStreamHandlerFactory((URLStreamHandlerFactory) any);
+                times = 1;
+            }
+        };
+    }
 
     // Tests_SRS_HSMHTTPCLIENT_34_002: [This function shall build an http request with the url in the format
     // <base url>/modules/<url encoded name>/genid/<url encoded gen id>/sign?api-version=<url encoded api version>.]
