@@ -42,6 +42,7 @@ public class HttpsRequest
      */
     public HttpsRequest(URL url, HttpsMethod method, byte[] body, String userAgentString) throws TransportException
     {
+        // Codes_SRS_HTTPSREQUEST_34_031: [The function shall save the provided arguments to be used when the http connection is built during the call to send().]
         this.url = url;
         this.method = method;
         this.body = body;
