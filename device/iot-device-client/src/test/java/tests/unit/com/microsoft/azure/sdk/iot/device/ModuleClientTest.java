@@ -199,16 +199,6 @@ public class ModuleClientTest
         final String expectedDeviceId = "1234";
         final String expectedModuleId = "5678";
         Deencapsulation.setField(client, "config", mockedDeviceClientConfig);
-        new NonStrictExpectations()
-        {
-            {
-                mockedDeviceClientConfig.getDeviceId();
-                result = expectedDeviceId;
-
-                mockedDeviceClientConfig.getModuleId();
-                result = expectedModuleId;
-            }
-        };
 
         //act
         client.sendEventAsync(mockedMessage, mockedIotHubEventCallback, new Object(), expectedOutputName);
@@ -218,12 +208,6 @@ public class ModuleClientTest
         {
             {
                 mockedMessage.setOutputName(expectedOutputName);
-                times = 1;
-
-                mockedMessage.setConnectionDeviceId(expectedDeviceId);
-                times = 1;
-
-                mockedMessage.setConnectionModuleId(expectedModuleId);
                 times = 1;
 
                 mockedDeviceIO.sendEventAsync(mockedMessage, mockedIotHubEventCallback, any, anyString);
