@@ -6,8 +6,6 @@ package com.microsoft.azure.sdk.iot.device.transport.https;
 import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
 
 import javax.net.ssl.SSLContext;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,13 +38,26 @@ public class HttpsRequest
      * @throws TransportException if the endpoint given does not use the
      * HTTPS protocol.
      */
-    public HttpsRequest(URL url, HttpsMethod method, byte[] body, String userAgentString) throws TransportException
+    public HttpsRequest(URL url, HttpsMethod method, byte[] body, String userAgentString)
     {
         // Codes_SRS_HTTPSREQUEST_34_031: [The function shall save the provided arguments to be used when the http connection is built during the call to send().]
         this.url = url;
         this.method = method;
         this.body = body;
         headers = new HashMap<>();
+
+        List<String> hostHeaderValues = new ArrayList<>();
+        if (url.getHost() != null && !url.getHost().isEmpty())
+        {
+            String host = url.getHost();
+            if (url.getPort() != -1)
+            {
+                host += ":" + url.getPort();
+            }
+            hostHeaderValues.add(host);
+
+            headers.put("Host", hostHeaderValues);
+        }
 
         if (userAgentString != null && !userAgentString.isEmpty())
         {

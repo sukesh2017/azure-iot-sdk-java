@@ -11,7 +11,6 @@ import com.microsoft.azure.sdk.iot.device.transport.https.HttpsResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -35,7 +34,7 @@ public class HttpsRequestResponseSerializer
      * @throws URISyntaxException if the request's url cannot be parsed
      * @throws IllegalArgumentException if the provided httpsRequest is null or has a null request url
      */
-    public static byte[] serializeRequest(HttpsRequest httpsRequest, String path, String queryString) throws UnsupportedEncodingException, URISyntaxException, IllegalArgumentException
+    public static byte[] serializeRequest(HttpsRequest httpsRequest, String path, String queryString, String host) throws URISyntaxException, IllegalArgumentException
     {
         if (httpsRequest == null)
         {
@@ -49,6 +48,16 @@ public class HttpsRequestResponseSerializer
             throw new IllegalArgumentException("Request uri of the request cannot be null");
         }
 
+        if (path == null || path.isEmpty())
+        {
+            throw new IllegalArgumentException("path cannot be null or empty");
+        }
+
+        if (host == null || host.isEmpty())
+        {
+            throw new IllegalArgumentException("host cannot be null or empty");
+        }
+        
         // Codes_SRS_HTTPREQUESTRESPONSESERIALIZER_34_003: [This function shall serialize the provided httpsRequest into the form:
         // POST /modules/<moduleName>/sign?api-version=2018-06-28 HTTP/1.1
         // Host: localhost:8081
@@ -60,7 +69,6 @@ public class HttpsRequestResponseSerializer
         httpsRequest.setHeaderField("Connection", "close");
 
         String updatedPath = preProcessRequestPath(path);
-        URI requestUri = new URI(updatedPath);
 
         StringBuilder builder = new StringBuilder();
         builder.append(httpsRequest.getHttpMethod());
@@ -79,12 +87,6 @@ public class HttpsRequestResponseSerializer
         builder.append(CR);
         builder.append(LF);
 
-        // Headers
-        if (requestUri.getHost() != null && !requestUri.getHost().isEmpty())
-        {
-            builder.append("Host: " + requestUri.getHost() + "\r\n");
-        }
-
         if (httpsRequest.getRequestHeaders() != null && !httpsRequest.getRequestHeaders().isEmpty())
         {
             builder.append(httpsRequest.getRequestHeaders());
@@ -94,6 +96,8 @@ public class HttpsRequestResponseSerializer
         {
             builder.append("Content-Length: " + httpsRequest.getBody().length + "\r\n");
         }
+
+        builder.append("Host: " + host + "\r\n");
 
         // Headers end
         builder.append(CR);

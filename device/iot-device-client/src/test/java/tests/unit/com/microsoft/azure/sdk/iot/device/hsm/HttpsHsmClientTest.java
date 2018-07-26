@@ -219,7 +219,7 @@ public class HttpsHsmClientTest
                 new HttpsRequest((URL) any, HttpsMethod.POST, expectedJson.getBytes(), TransportUtils.USER_AGENT_STRING);
                 result = mockedHttpsRequest;
 
-                HttpsRequestResponseSerializer.serializeRequest(mockedHttpsRequest, anyString, anyString);
+                HttpsRequestResponseSerializer.serializeRequest(mockedHttpsRequest, anyString, anyString, anyString);
                 result = expectedMetaData;
 
                 mockedHttpsRequest.getBody();
@@ -253,7 +253,7 @@ public class HttpsHsmClientTest
         new Verifications()
         {
             {
-                HttpsRequestResponseSerializer.serializeRequest(mockedHttpsRequest, anyString, anyString);
+                HttpsRequestResponseSerializer.serializeRequest(mockedHttpsRequest, anyString, anyString, anyString);
                 times = 1;
 
                 HttpsRequestResponseSerializer.deserializeResponse((BufferedReader) any);

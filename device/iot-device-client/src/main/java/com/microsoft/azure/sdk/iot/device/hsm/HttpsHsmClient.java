@@ -5,9 +5,6 @@
 
 package com.microsoft.azure.sdk.iot.device.hsm;
 
-import com.microsoft.azure.sdk.iot.deps.transport.http.HttpMethod;
-import com.microsoft.azure.sdk.iot.deps.transport.http.HttpRequest;
-import com.microsoft.azure.sdk.iot.deps.transport.http.HttpResponse;
 import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
 import com.microsoft.azure.sdk.iot.device.hsm.parser.ErrorResponse;
 import com.microsoft.azure.sdk.iot.device.hsm.parser.SignRequest;
@@ -91,17 +88,17 @@ public class HttpsHsmClient
     {
         // Codes_SRS_HSMHTTPCLIENT_34_002: [This function shall build an http request with the url in the format
         // <base url>/modules/<url encoded name>/genid/<url encoded gen id>/sign?api-version=<url encoded api version>.]
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append(baseUrl != null ? baseUrl.replaceFirst("/*$", "") : "");
-        urlBuilder.append("/modules/" + URLEncoder.encode(moduleName, "UTF-8"));
-        urlBuilder.append("/genid/" + URLEncoder.encode(generationId, "UTF-8"));
-        urlBuilder.append("/sign?");
-        urlBuilder.append("api-version=").append(URLEncoder.encode(apiVersion, "UTF-8"));
+        String host = baseUrl != null ? baseUrl.replaceFirst("/*$", "") : "";
+        StringBuilder pathBuilder = new StringBuilder();
+        pathBuilder.append("/modules/" + URLEncoder.encode(moduleName, "UTF-8"));
+        pathBuilder.append("/genid/" + URLEncoder.encode(generationId, "UTF-8"));
+        pathBuilder.append("/sign?");
+        pathBuilder.append("api-version=").append(URLEncoder.encode(apiVersion, "UTF-8"));
 
         byte[] body = signRequest.toJson().getBytes();
         
-        HttpsRequest httpsRequest = new HttpsRequest(new URL(urlBuilder.toString()), HttpsMethod.POST, body, TransportUtils.USER_AGENT_STRING);
-        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, urlBuilder.toString(),"/modules/" + moduleName + "/sign", apiVersion);
+        HttpsRequest httpsRequest = new HttpsRequest(new URL(host + pathBuilder.toString()), HttpsMethod.POST, body, TransportUtils.USER_AGENT_STRING);
+        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, pathBuilder.toString(),"/modules/" + moduleName + "/sign", apiVersion, host);
 
         int responseCode = response.getStatus();
         String responseBody = new String(response.getBody());
@@ -143,14 +140,14 @@ public class HttpsHsmClient
 
         // Codes_SRS_HSMHTTPCLIENT_34_008: [This function shall build an http request with the url in the format
         // <base url>/trust-bundle?api-version=<url encoded api version>.]
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append(baseUrl != null ? baseUrl.replaceFirst("/*$", "") : "");
-        urlBuilder.append("/trust-bundle?");
-        urlBuilder.append("api-version=").append(URLEncoder.encode(apiVersion, "UTF-8"));
+        String host = baseUrl != null ? baseUrl.replaceFirst("/*$", "") : "";
+        StringBuilder pathBuilder = new StringBuilder();
+        pathBuilder.append("/trust-bundle?");
+        pathBuilder.append("api-version=").append(URLEncoder.encode(apiVersion, "UTF-8"));
 
         // Codes_SRS_HSMHTTPCLIENT_34_009: [This function shall send a GET http request to the built url.]
-        HttpsRequest httpsRequest = new HttpsRequest(new URL(urlBuilder.toString()), HttpsMethod.GET, new byte[0], TransportUtils.USER_AGENT_STRING);
-        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, urlBuilder.toString(), "/trust-bundle", apiVersion);
+        HttpsRequest httpsRequest = new HttpsRequest(new URL(host + pathBuilder.toString()), HttpsMethod.GET, new byte[0], TransportUtils.USER_AGENT_STRING);
+        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, pathBuilder.toString(), "/trust-bundle", apiVersion, host);
 
         int statusCode = response.getStatus();
         String body = response.getBody() != null ? new String(response.getBody()) : "";
@@ -174,7 +171,7 @@ public class HttpsHsmClient
         }
     }
 
-    private HttpsResponse sendRequestBasedOnScheme(HttpsRequest httpsRequest, String url, String path, String apiVersion) throws TransportException, IOException, URISyntaxException
+    private HttpsResponse sendRequestBasedOnScheme(HttpsRequest httpsRequest, String url, String path, String apiVersion, String host) throws TransportException, IOException, URISyntaxException
     {
         if (scheme.equalsIgnoreCase(UNIX_SCHEME) || scheme.equalsIgnoreCase(HTTPS_SCHEME) || scheme.equalsIgnoreCase(HTTP_SCHEME))
         {
@@ -189,8 +186,10 @@ public class HttpsHsmClient
             }
             else if (this.scheme.equalsIgnoreCase(UNIX_SCHEME))
             {
+                String unixAddressPrefix = UNIX_SCHEME + "://";
+                host = host.substring(url.indexOf(unixAddressPrefix) + unixAddressPrefix.length());
                 // Codes_SRS_HSMHTTPCLIENT_34_006: [If the scheme of the provided url is Unix, this function shall send the http request using unix domain sockets.]
-                response = sendHttpRequestUsingUnixSocket(httpsRequest, url, path, "apiVersion=" + apiVersion);
+                response = sendHttpRequestUsingUnixSocket(httpsRequest, url, path, "apiVersion=" + apiVersion, host);
             }
 
             return response;
@@ -209,10 +208,10 @@ public class HttpsHsmClient
      * @throws IOException If the unix socket cannot be reached
      * @throws URISyntaxException the the url cannot be parsed
      */
-    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String url, String path, String queryString) throws IOException, URISyntaxException
+    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String url, String path, String queryString, String host) throws IOException, URISyntaxException
     {
         //write to socket
-        byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, path, queryString);
+        byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, path, queryString, host);
         UnixSocketAddress address = new UnixSocketAddress(url);
         UnixSocketChannel channel = UnixSocketChannel.open(address);
         PrintWriter writer = new PrintWriter(Channels.newOutputStream(channel));
