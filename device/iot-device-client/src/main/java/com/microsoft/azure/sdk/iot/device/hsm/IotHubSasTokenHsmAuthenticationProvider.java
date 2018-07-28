@@ -82,8 +82,6 @@ public class IotHubSasTokenHsmAuthenticationProvider extends IotHubSasTokenWithR
             String host = gatewayHostName != null && !gatewayHostName.isEmpty() ? gatewayHostName : hostname;
             String sharedAccessToken = IotHubSasToken.buildSharedAccessToken(audience, signature, expiresOn);
 
-            System.out.println("Built sharedAccessToken: " + sharedAccessToken);
-
             // Codes_SRS_MODULEAUTHENTICATIONWITHHSM_34_004: [If the gatewayHostname is null or empty, this function shall construct the sas token using the hostname instead of the gateway hostname.]
             // Codes_SRS_MODULEAUTHENTICATIONWITHHSM_34_006: [If the gatewayHostname is present, this function shall construct the sas token using the gateway hostname instead of the hostname.]
             return new IotHubSasToken(host, deviceId, null, sharedAccessToken, moduleId, expiresOn);

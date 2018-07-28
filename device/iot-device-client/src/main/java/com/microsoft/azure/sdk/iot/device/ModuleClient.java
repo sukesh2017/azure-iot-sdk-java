@@ -121,7 +121,7 @@ public class ModuleClient extends InternalClient
      */
     public static ModuleClient createFromEnvironment() throws ModuleClientException
     {
-        return createFromEnvironment(IotHubClientProtocol.AMQPS);
+        return createFromEnvironment(IotHubClientProtocol.MQTT);
     }
 
     /**
@@ -275,8 +275,7 @@ public class ModuleClient extends InternalClient
             throw new IllegalArgumentException("outputName cannot be null or empty");
         }
 
-        //Codes_SRS_MODULECLIENT_34_002: [This function shall set the provided message with the provided outputName, device id, and module id properties.]
-        this.setModuleProperties(message);
+        //Codes_SRS_MODULECLIENT_34_002: [This function shall set the provided message with the provided outputName.]
         message.setOutputName(outputName);
 
         //Codes_SRS_MODULECLIENT_34_003: [This function shall invoke super.sendEventAsync(message, callback, callbackContext).]
@@ -463,16 +462,6 @@ public class ModuleClient extends InternalClient
         //Codes_SRS_MODULECLIENT_34_012: [This function shall save the provided callback with context in config tied to the provided inputName.]
         this.config.setMessageCallback(inputName, callback, context);
         return this;
-    }
-
-    private void setModuleProperties(Message message)
-    {
-        String deviceId = this.getConfig().getDeviceId();
-        String moduleId = this.getConfig().getModuleId();
-
-        message.setUserId(deviceId + "/" + moduleId);
-        message.setConnectionModuleId(moduleId);
-        message.setConnectionDeviceId(deviceId);
     }
 
     private static long getReceivePeriod(IotHubClientProtocol protocol)

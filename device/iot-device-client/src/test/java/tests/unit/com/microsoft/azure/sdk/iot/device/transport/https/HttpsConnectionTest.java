@@ -236,8 +236,7 @@ public class HttpsConnectionTest
         new Verifications()
         {
             {
-                ((HttpsURLConnection) mockUrl.openConnection())
-                        .setRequestMethod(httpsMethod.name());
+                mockUrlConn.setRequestMethod(httpsMethod.name());
             }
         };
     }

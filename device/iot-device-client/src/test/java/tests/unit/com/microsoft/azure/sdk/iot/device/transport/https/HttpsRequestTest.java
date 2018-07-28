@@ -15,15 +15,14 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /** Unit tests for HttpsRequest. */
 public class HttpsRequestTest
@@ -591,5 +590,25 @@ public class HttpsRequestTest
         assertEquals(expectedRequestHeaders, actualRequestHeaders);
         assertEquals(mockUrl, actualURL);
         Assert.assertArrayEquals(expectedBody, actualBody);
+    }
+
+    // Tests_SRS_HTTPSREQUEST_34_031: [The function shall save the provided arguments to be used when the http connection is built during the call to send().]
+    @Test
+    public void constructorSavesFields() throws MalformedURLException, TransportException
+    {
+        //arrange
+        URL url = new URL("http://www.microsoft.com");
+        HttpsMethod method = HttpsMethod.POST;
+        byte[] body = new byte[2];
+        String userAgentString = "user agent";
+
+        //act
+        HttpsRequest request = new HttpsRequest(url, method, body, userAgentString);
+
+        //assert
+        assertEquals(url, Deencapsulation.getField(request, "url"));
+        assertEquals(method, Deencapsulation.getField(request, "method"));
+        assertTrue(Arrays.equals(body, (byte[]) Deencapsulation.getField(request, "body")));
+        assertEquals(userAgentString, ((Map<String, List<String>>)Deencapsulation.getField(request, "headers")).get("User-Agent").get(0));
     }
 }

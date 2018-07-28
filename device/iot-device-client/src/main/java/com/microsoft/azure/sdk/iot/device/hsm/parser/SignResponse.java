@@ -27,9 +27,6 @@ public class SignResponse
 
     public static SignResponse fromJson(String json)
     {
-        System.out.println("Creating sign response from json, json:");
-        System.out.println(json);
-
         return new GsonBuilder().create().fromJson(json, SignResponse.class);
     }
 }

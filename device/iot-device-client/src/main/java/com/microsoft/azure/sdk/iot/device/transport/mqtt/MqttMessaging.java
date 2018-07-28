@@ -135,6 +135,7 @@ public class MqttMessaging extends Mqtt
             separatorNeeded = true;
         }
 
+            stringBuilder.append(message.getConnectionDeviceId());
 
         for (MessageProperty property : message.getProperties())
         {

@@ -98,14 +98,14 @@ public class HttpsRequestResponseSerializerTest
 
         uriExpectations();
 
-        String expected = "POST /modules/testModule/sign?api-version=2018-06-28 HTTP/1.1\r\nHost: localhost:8081\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: 5\r\n\r\n";
+        String expected = "POST /modules/testModule/sign?api-version=2018-06-28 HTTP/1.1\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: 5\r\nHost: localhost:8081\r\n\r\n";
         byte[] body = "11111".getBytes();
         HttpsRequest request = new HttpsRequest(new URL("https://localhost:8081/modules/testModule/sign?api-version=2018-06-28"), HttpsMethod.GET, body, null);
         request.setHeaderField("content-type", "application/json");
         request.setHeaderField("content-length", "5");
 
         //act
-        byte[] httpsRequestData = HttpsRequestResponseSerializer.serializeRequest(request, "/modules/testModule/sign", "api-version=2018-06-28");
+        byte[] httpsRequestData = HttpsRequestResponseSerializer.serializeRequest(request, "/modules/testModule/sign", "api-version=2018-06-28",  "localhost:8081");
 
         //assert
         String httpsRequestString = new String(httpsRequestData);
@@ -129,9 +129,6 @@ public class HttpsRequestResponseSerializerTest
                 mockedHttpsRequest.getRequestUrl();
                 result = mockedURL;
 
-                new URI(anyString);
-                result = mockedURI;
-
                 mockedHttpsRequest.getRequestHeaders();
                 result = "Connection: close\r\n" + "Content-Type: application/json\r\n";
 
@@ -142,14 +139,14 @@ public class HttpsRequestResponseSerializerTest
 
         uriExpectations();
 
-        String expected = "POST /modules/testModule/sign HTTP/1.1\r\nHost: localhost:8081\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: 5\r\n\r\n";
+        String expected = "POST /modules/testModule/sign HTTP/1.1\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: 5\r\nHost: localhost:8081\r\n\r\n";
         byte[] body = "11111".getBytes();
         HttpsRequest request = new HttpsRequest(new URL("https://localhost:8081/modules/testModule/sign"), HttpsMethod.GET, body, null);
         request.setHeaderField("content-type", "application/json");
         request.setHeaderField("content-length", "5");
 
         //act
-        byte[] httpsRequestData = HttpsRequestResponseSerializer.serializeRequest(request, "/modules/testModule/sign", "");
+        byte[] httpsRequestData = HttpsRequestResponseSerializer.serializeRequest(request, "/modules/testModule/sign", "",  "localhost:8081");
 
         //assert
         String httpsRequestString = new String(httpsRequestData);
@@ -161,7 +158,7 @@ public class HttpsRequestResponseSerializerTest
     public void serializeThrowsForNullRequest() throws UnsupportedEncodingException, URISyntaxException
     {
         //act
-        HttpsRequestResponseSerializer.serializeRequest(null, "modules/testModule/sign", "api-version=2018-06-28");
+        HttpsRequestResponseSerializer.serializeRequest(null, "modules/testModule/sign", "api-version=2018-06-28",  "");
     }
 
     // Tests_SRS_HTTPREQUESTRESPONSESERIALIZER_34_002: [If the provided request's url is null, this function shall throw an IllegalArgumentException.]
@@ -177,7 +174,7 @@ public class HttpsRequestResponseSerializerTest
         };
 
         //act
-        HttpsRequestResponseSerializer.serializeRequest(mockedHttpsRequest, "modules/testModule/sign", "api-version=2018-06-28");
+        HttpsRequestResponseSerializer.serializeRequest(mockedHttpsRequest, "modules/testModule/sign", "api-version=2018-06-28",  "");
     }
 
     // Tests_SRS_HTTPREQUESTRESPONSESERIALIZER_34_004: [If the provided bufferedReader is null, this function shall throw an IllegalArgumentException.]
