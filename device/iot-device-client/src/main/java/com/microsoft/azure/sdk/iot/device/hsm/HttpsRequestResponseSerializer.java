@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HttpsRequestResponseSerializer
 {
@@ -122,6 +123,18 @@ public class HttpsRequestResponseSerializer
         {
             // Codes_SRS_HTTPREQUESTRESPONSESERIALIZER_34_004: [If the provided bufferedReader is null, this function shall throw an IllegalArgumentException.]
             throw new IllegalArgumentException("buffered reader cannot be null");
+        }
+
+        try
+        {
+            String allString = bufferedReader.lines().collect(Collectors.joining());
+            System.out.println("read all chars from stream, result:");
+            System.out.println(allString);
+        }
+        catch (Exception e)
+        {
+            System.out.println("Could not read all chars from stream. Throwing...");
+            throw e;
         }
 
         // Codes_SRS_HTTPREQUESTRESPONSESERIALIZER_34_005: [This function shall read lines from the provided buffered

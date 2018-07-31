@@ -193,9 +193,9 @@ public class HttpsHsmClient
             else if (this.scheme.equalsIgnoreCase(UNIX_SCHEME))
             {
                 String unixAddressPrefix = UNIX_SCHEME + "://";
-                host = host.substring(url.indexOf(unixAddressPrefix) + unixAddressPrefix.length());
+                String localUnixSocketPath = host.substring(url.indexOf(unixAddressPrefix) + unixAddressPrefix.length());
                 // Codes_SRS_HSMHTTPCLIENT_34_006: [If the scheme of the provided url is Unix, this function shall send the http request using unix domain sockets.]
-                response = sendHttpRequestUsingUnixSocket(httpsRequest, url, path, "apiVersion=" + apiVersion, host);
+                response = sendHttpRequestUsingUnixSocket(httpsRequest, path, "apiVersion=" + apiVersion, localUnixSocketPath);
             }
 
             return response;
@@ -214,19 +214,18 @@ public class HttpsHsmClient
      * @throws IOException If the unix socket cannot be reached
      * @throws URISyntaxException the the url cannot be parsed
      */
-    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String url, String path, String queryString, String host) throws IOException, URISyntaxException
+    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String httpRequestPath, String httpRequestQueryString, String unixSocketAddress) throws IOException, URISyntaxException
     {
         System.out.println("Sending http request using unix sockets");
-        System.out.println("url: " + url);
-        System.out.println("path: " + path);
-        System.out.println("query: " + queryString);
-        System.out.println("host: " + host);
+        System.out.println("path: " + httpRequestPath);
+        System.out.println("query: " + httpRequestQueryString);
+        System.out.println("unix socket address: " + unixSocketAddress);
 
         //write to socket
-        byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, path, queryString, host);
+        byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, httpRequestPath, httpRequestQueryString, unixSocketAddress);
 
-        System.out.println("opening unix socket address with host: " + host);
-        UnixSocketAddress address = new UnixSocketAddress(host);
+        System.out.println("opening unix socket address with local address: " + unixSocketAddress);
+        UnixSocketAddress address = new UnixSocketAddress(unixSocketAddress);
         UnixSocketChannel channel = UnixSocketChannel.open(address);
         PrintWriter writer = new PrintWriter(Channels.newOutputStream(channel));
 
@@ -241,8 +240,22 @@ public class HttpsHsmClient
         writer.flush();
         writer.close();
 
+        System.out.println("Finished writing to unix socket, now starting to read");
+
         //read response
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(Channels.newInputStream(channel)));
+        InputStreamReader is = new InputStreamReader(Channels.newInputStream(channel));
+
+        if (is.ready())
+        {
+            System.out.println("input stream is ready to read");
+        }
+        else
+        {
+            System.out.println("input stream is NOT ready to read");
+        }
+
+        BufferedReader bufferedReader = new BufferedReader(is);
+
         return HttpsRequestResponseSerializer.deserializeResponse(bufferedReader);
     }
 }
