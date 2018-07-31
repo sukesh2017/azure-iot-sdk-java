@@ -238,21 +238,12 @@ public class HttpsHsmClient
 
         //ensure all data is pushed to writer, then close
         writer.flush();
-        writer.close();
+        //writer.close();
 
         System.out.println("Finished writing to unix socket, now starting to read");
 
         //read response
         InputStreamReader is = new InputStreamReader(Channels.newInputStream(channel));
-
-        long startTime = System.currentTimeMillis();
-        while (!is.ready())
-        {
-            if (System.currentTimeMillis() - 1 * 60 * 1000 > startTime)
-            {
-                throw new IOException("Timed out waiting for inputstream to open");
-            }
-        }
 
         if (is.ready())
         {
