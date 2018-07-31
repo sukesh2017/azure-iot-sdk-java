@@ -99,7 +99,7 @@ public class HttpsRequestResponseSerializer
             builder.append("Content-Length: " + httpsRequest.getBody().length + "\r\n");
         }
 
-        builder.append("Host: " + host + "\r\n");
+        builder.append("Host: " + "workload.sock:80" + "\r\n");
 
         // Headers end
         builder.append(CR);

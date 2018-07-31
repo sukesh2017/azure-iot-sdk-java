@@ -104,8 +104,8 @@ public class HttpsHsmClient
 
         byte[] body = signRequest.toJson().getBytes();
         
-        HttpsRequest httpsRequest = new HttpsRequest(new URL(host + pathBuilder.toString()), HttpsMethod.POST, body, TransportUtils.USER_AGENT_STRING);
-        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, pathBuilder.toString(),"/modules/" + moduleName + "/sign", apiVersion, host);
+        HttpsRequest httpsRequest = new HttpsRequest(new URL(host + pathBuilder.toString()), HttpsMethod.POST, body, "");
+        HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, pathBuilder.toString(),"/modules/" + moduleName + "/genid/" + URLEncoder.encode(generationId, "UTF-8") + "/sign", apiVersion, host);
 
         int responseCode = response.getStatus();
         String responseBody = new String(response.getBody());
@@ -183,7 +183,7 @@ public class HttpsHsmClient
         if (scheme.equalsIgnoreCase(UNIX_SCHEME) || scheme.equalsIgnoreCase(HTTPS_SCHEME) || scheme.equalsIgnoreCase(HTTP_SCHEME))
         {
             // Codes_SRS_HSMHTTPCLIENT_34_003: [This function shall build an http request with headers ContentType and Accept with value application/json.]
-            httpsRequest.setHeaderField("ContentType", "application/json");
+            httpsRequest.setHeaderField("Content-Type", "application/json");
             httpsRequest.setHeaderField("Accept", "application/json");
 
             HttpsResponse response = null;
@@ -196,7 +196,7 @@ public class HttpsHsmClient
                 String unixAddressPrefix = UNIX_SCHEME + "://";
                 String localUnixSocketPath = host.substring(url.indexOf(unixAddressPrefix) + unixAddressPrefix.length());
                 // Codes_SRS_HSMHTTPCLIENT_34_006: [If the scheme of the provided url is Unix, this function shall send the http request using unix domain sockets.]
-                response = sendHttpRequestUsingUnixSocket(httpsRequest, path, "apiVersion=" + apiVersion, localUnixSocketPath);
+                response = sendHttpRequestUsingUnixSocket(httpsRequest, path, "api-version=" + apiVersion, localUnixSocketPath);
             }
 
             return response;
