@@ -225,8 +225,8 @@ public class HttpsHsmClient
         //write to socket
         byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, path, queryString, host);
 
-        System.out.println("opening unix socket address with url: " + url);
-        UnixSocketAddress address = new UnixSocketAddress(url);
+        System.out.println("opening unix socket address with host: " + host);
+        UnixSocketAddress address = new UnixSocketAddress(host);
         UnixSocketChannel channel = UnixSocketChannel.open(address);
         PrintWriter writer = new PrintWriter(Channels.newOutputStream(channel));
 
