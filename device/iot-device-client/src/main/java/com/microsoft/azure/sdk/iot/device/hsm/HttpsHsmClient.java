@@ -245,6 +245,15 @@ public class HttpsHsmClient
         //read response
         InputStreamReader is = new InputStreamReader(Channels.newInputStream(channel));
 
+        long startTime = System.currentTimeMillis();
+        while (!is.ready())
+        {
+            if (System.currentTimeMillis() - 1 * 60 * 1000 > startTime)
+            {
+                throw new IOException("Timed out waiting for inputstream to open");
+            }
+        }
+
         if (is.ready())
         {
             System.out.println("input stream is ready to read");
