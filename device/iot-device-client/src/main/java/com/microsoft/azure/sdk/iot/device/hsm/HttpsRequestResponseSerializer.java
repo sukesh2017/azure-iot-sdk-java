@@ -94,6 +94,7 @@ public class HttpsRequestResponseSerializer
 
         if (httpsRequest.getBody() != null)
         {
+            System.out.println("Body was not null, adding content length of " + httpsRequest.getBody().length);
             builder.append("Content-Length: " + httpsRequest.getBody().length + "\r\n");
         }
 
@@ -102,6 +103,9 @@ public class HttpsRequestResponseSerializer
         // Headers end
         builder.append(CR);
         builder.append(LF);
+
+        System.out.println("Built serializable http request:");
+        System.out.println(builder.toString());
 
         return builder.toString().getBytes(StandardCharsets.US_ASCII);
     }

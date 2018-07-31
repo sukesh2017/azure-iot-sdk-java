@@ -216,8 +216,16 @@ public class HttpsHsmClient
      */
     private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String url, String path, String queryString, String host) throws IOException, URISyntaxException
     {
+        System.out.println("Sending http request using unix sockets");
+        System.out.println("url: " + url);
+        System.out.println("path: " + path);
+        System.out.println("query: " + queryString);
+        System.out.println("host: " + host);
+
         //write to socket
         byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, path, queryString, host);
+
+        System.out.println("opening unix socket address with url: " + url);
         UnixSocketAddress address = new UnixSocketAddress(url);
         UnixSocketChannel channel = UnixSocketChannel.open(address);
         PrintWriter writer = new PrintWriter(Channels.newOutputStream(channel));
