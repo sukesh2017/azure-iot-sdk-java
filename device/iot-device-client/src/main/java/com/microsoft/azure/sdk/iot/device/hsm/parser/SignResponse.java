@@ -8,11 +8,14 @@ package com.microsoft.azure.sdk.iot.device.hsm.parser;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.stream.JsonToken;
+
+import javax.json.Json;
 
 public class SignResponse
 {
     private static final String DIGEST_NAME = "digest";
-    @Expose(serialize = false, deserialize = true)
+    @Expose(serialize = true, deserialize = true)
     @SerializedName(DIGEST_NAME)
     public String digest;
 
@@ -27,6 +30,10 @@ public class SignResponse
 
     public static SignResponse fromJson(String json)
     {
-        return new GsonBuilder().create().fromJson(json, SignResponse.class);
+        System.out.println("Converting to a sign response from json: ");
+        //json = json + JsonToken.END_DOCUMENT;
+        System.out.println(json);
+
+        return new GsonBuilder().setLenient().create().fromJson(json, SignResponse.class);
     }
 }

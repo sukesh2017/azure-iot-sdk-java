@@ -10,7 +10,6 @@ import com.microsoft.azure.sdk.iot.device.hsm.parser.ErrorResponse;
 import com.microsoft.azure.sdk.iot.device.hsm.parser.SignRequest;
 import com.microsoft.azure.sdk.iot.device.hsm.parser.SignResponse;
 import com.microsoft.azure.sdk.iot.device.hsm.parser.TrustBundleResponse;
-import com.microsoft.azure.sdk.iot.device.transport.TransportUtils;
 import com.microsoft.azure.sdk.iot.device.transport.https.HttpsMethod;
 import com.microsoft.azure.sdk.iot.device.transport.https.HttpsRequest;
 import com.microsoft.azure.sdk.iot.device.transport.https.HttpsResponse;
@@ -19,8 +18,9 @@ import jnr.unixsocket.UnixSocketChannel;
 
 import java.io.*;
 import java.net.*;
-import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.charset.StandardCharsets;
 
 public class HttpsHsmClient
 {
@@ -105,6 +105,7 @@ public class HttpsHsmClient
         byte[] body = signRequest.toJson().getBytes();
         
         HttpsRequest httpsRequest = new HttpsRequest(new URL(host + pathBuilder.toString()), HttpsMethod.POST, body, "");
+        httpsRequest.setHeaderField("Content-Type", "application/json");
         HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, pathBuilder.toString(),"/modules/" + moduleName + "/genid/" + URLEncoder.encode(generationId, "UTF-8") + "/sign", apiVersion, host);
 
         int responseCode = response.getStatus();
@@ -153,7 +154,7 @@ public class HttpsHsmClient
         pathBuilder.append("api-version=").append(URLEncoder.encode(apiVersion, "UTF-8"));
 
         // Codes_SRS_HSMHTTPCLIENT_34_009: [This function shall send a GET http request to the built url.]
-        HttpsRequest httpsRequest = new HttpsRequest(new URL(host + pathBuilder.toString()), HttpsMethod.GET, new byte[0], TransportUtils.USER_AGENT_STRING);
+        HttpsRequest httpsRequest = new HttpsRequest(new URL(host + pathBuilder.toString()), HttpsMethod.GET, new byte[0], "");
         HttpsResponse response = sendRequestBasedOnScheme(httpsRequest, pathBuilder.toString(), "/trust-bundle", apiVersion, host);
 
         int statusCode = response.getStatus();
@@ -183,7 +184,6 @@ public class HttpsHsmClient
         if (scheme.equalsIgnoreCase(UNIX_SCHEME) || scheme.equalsIgnoreCase(HTTPS_SCHEME) || scheme.equalsIgnoreCase(HTTP_SCHEME))
         {
             // Codes_SRS_HSMHTTPCLIENT_34_003: [This function shall build an http request with headers ContentType and Accept with value application/json.]
-            httpsRequest.setHeaderField("Content-Type", "application/json");
             httpsRequest.setHeaderField("Accept", "application/json");
 
             HttpsResponse response = null;
@@ -194,7 +194,7 @@ public class HttpsHsmClient
             else if (this.scheme.equalsIgnoreCase(UNIX_SCHEME))
             {
                 String unixAddressPrefix = UNIX_SCHEME + "://";
-                String localUnixSocketPath = host.substring(url.indexOf(unixAddressPrefix) + unixAddressPrefix.length());
+                String localUnixSocketPath = host.substring(url.indexOf(unixAddressPrefix) + unixAddressPrefix.length() + 1);
                 // Codes_SRS_HSMHTTPCLIENT_34_006: [If the scheme of the provided url is Unix, this function shall send the http request using unix domain sockets.]
                 response = sendHttpRequestUsingUnixSocket(httpsRequest, path, "api-version=" + apiVersion, localUnixSocketPath);
             }
@@ -210,44 +210,53 @@ public class HttpsHsmClient
     /**
      * Send an HTTP request over a unix domain socket
      * @param httpsRequest the request to send
-     * @param url the url of the unix socket to send to
      * @return the response from the HSM unit
      * @throws IOException If the unix socket cannot be reached
      * @throws URISyntaxException the the url cannot be parsed
      */
     private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String httpRequestPath, String httpRequestQueryString, String unixSocketAddress) throws IOException, URISyntaxException
     {
-        System.out.println("Sending http request using unix sockets");
-        System.out.println("path: " + httpRequestPath);
-        System.out.println("query: " + httpRequestQueryString);
-        System.out.println("unix socket address: " + unixSocketAddress);
-
-        //write to socket
-        byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, httpRequestPath, httpRequestQueryString, unixSocketAddress);
-
-        System.out.println("opening unix socket address with local address: " + unixSocketAddress);
-        UnixSocketAddress address = new UnixSocketAddress(unixSocketAddress);
-        UnixSocketChannel channel = UnixSocketChannel.open(address);
-        PrintWriter writer = new PrintWriter(Channels.newOutputStream(channel));
-
-        writer.print(requestBytes);
-
-        if (httpsRequest.getBody() != null)
+        UnixSocketChannel channel = null;
+        HttpsResponse response = null;
+        try
         {
-            writer.print(httpsRequest.getBody());
+            //write to socket
+            byte[] requestBytes = HttpsRequestResponseSerializer.serializeRequest(httpsRequest, httpRequestPath, httpRequestQueryString, unixSocketAddress);
+            UnixSocketAddress address = new UnixSocketAddress(unixSocketAddress);
+            channel = UnixSocketChannel.open(address);
+
+            channel.write(ByteBuffer.wrap(requestBytes));
+
+            if (httpsRequest.getBody() != null)
+            {
+                channel.write(ByteBuffer.wrap(httpsRequest.getBody()));
+            }
+
+            //read response
+            ByteBuffer maxPossibleResponse = ByteBuffer.wrap(new byte[9000]);
+            int responseByteCount = channel.read(maxPossibleResponse);
+
+            byte[] actualResponse = new byte[responseByteCount];
+            System.arraycopy(maxPossibleResponse.array(), 0, actualResponse, 0, responseByteCount);
+            response = HttpsRequestResponseSerializer.deserializeResponse(new BufferedReader(new StringReader(new String(actualResponse, StandardCharsets.US_ASCII))));
+        }
+        catch (Exception e)
+        {
+            if (channel != null)
+            {
+                channel.close();
+            }
+
+            throw e;
+        }
+        finally
+        {
+            if (channel != null)
+            {
+                channel.close();
+            }
         }
 
-        //ensure all data is pushed to writer, then close
-        writer.flush();
-        writer.close();
-
-        System.out.println("Finished writing to unix socket, now starting to read");
-
-        InputStreamReader r = new InputStreamReader(Channels.newInputStream(channel));
-        CharBuffer result = CharBuffer.allocate(9000);
-        r.read(result);
-        result.flip();
-        System.out.println("read from server: " + result.toString());
-        return null;
+        return response;
     }
 }

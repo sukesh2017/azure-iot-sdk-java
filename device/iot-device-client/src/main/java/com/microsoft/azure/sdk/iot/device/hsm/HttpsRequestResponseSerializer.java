@@ -88,25 +88,21 @@ public class HttpsRequestResponseSerializer
         builder.append(CR);
         builder.append(LF);
 
+        builder.append("Host: " + "workload.sock:80" + "\r\n");
+
         if (httpsRequest.getRequestHeaders() != null && !httpsRequest.getRequestHeaders().isEmpty())
         {
             builder.append(httpsRequest.getRequestHeaders());
         }
 
-        if (httpsRequest.getBody() != null)
+        if (httpsRequest.getBody() != null && httpsRequest.getBody().length != 0)
         {
-            System.out.println("Body was not null, adding content length of " + httpsRequest.getBody().length);
             builder.append("Content-Length: " + httpsRequest.getBody().length + "\r\n");
         }
-
-        builder.append("Host: " + "workload.sock:80" + "\r\n");
 
         // Headers end
         builder.append(CR);
         builder.append(LF);
-
-        System.out.println("Built serializable http request:");
-        System.out.println(builder.toString());
 
         return builder.toString().getBytes(StandardCharsets.US_ASCII);
     }
@@ -123,18 +119,6 @@ public class HttpsRequestResponseSerializer
         {
             // Codes_SRS_HTTPREQUESTRESPONSESERIALIZER_34_004: [If the provided bufferedReader is null, this function shall throw an IllegalArgumentException.]
             throw new IllegalArgumentException("buffered reader cannot be null");
-        }
-
-        try
-        {
-            String allString = bufferedReader.lines().collect(Collectors.joining());
-            System.out.println("read all chars from stream, result:");
-            System.out.println(allString);
-        }
-        catch (Exception e)
-        {
-            System.out.println("Could not read all chars from stream. Throwing...");
-            throw e;
         }
 
         // Codes_SRS_HTTPREQUESTRESPONSESERIALIZER_34_005: [This function shall read lines from the provided buffered

@@ -3,8 +3,10 @@
 
 package samples.com.microsoft.azure.sdk.iot;
 
+import com.google.gson.stream.JsonToken;
 import com.microsoft.azure.sdk.iot.device.*;
 import com.microsoft.azure.sdk.iot.device.exceptions.ModuleClientException;
+import com.microsoft.azure.sdk.iot.device.hsm.parser.SignResponse;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 
 import java.io.IOException;
@@ -182,6 +184,12 @@ public class SendReceiveModuleSample
      */
     public static void main(String[] args) throws IOException, URISyntaxException, ModuleClientException
     {
+        SignResponse response = SignResponse.fromJson("{\"digest\":\"lOJ/zGvDqWJX9mueUrvC/MHAKwrkMJszCiDM8zDEDOg=\"}");
+
+
+        ModuleClient.createFromEnvironment();
+
+
         System.out.println("Starting...");
         System.out.println("Beginning setup.");
 

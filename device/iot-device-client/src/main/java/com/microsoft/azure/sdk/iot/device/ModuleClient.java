@@ -172,13 +172,25 @@ public class ModuleClient extends InternalClient
             //Codes_SRS_MODULECLIENT_34_014: [This function shall check for environment variables for edgedUri, deviceId, moduleId,
             // hostname, authScheme, gatewayHostname, and generationId. If any of these other than gatewayHostname is missing,
             // this function shall throw a ModuleClientException.]
-            String edgedUri = envVariables.get(IotEdgedUriVariableName);
-            String deviceId = envVariables.get(DeviceIdVariableName);
-            String moduleId = envVariables.get(ModuleIdVariableName);
-            String hostname = envVariables.get(IotHubHostnameVariableName);
-            String authScheme = envVariables.get(AuthSchemeVariableName);
-            String gatewayHostname = envVariables.get(GatewayHostnameVariableName);
-            String generationId = envVariables.get(ModuleGenerationIdVariableName);
+            /*
+                            "RuntimeLogLevel=Information",
+                "IOTEDGE_DEVICEID=edgeDevice1",
+                "IOTEDGE_GATEWAYHOSTNAME=ubuntu-bionic",
+                "IOTEDGE_APIVERSION=2018-06-28",
+                "IOTEDGE_MODULEID=simulated-device-3",
+                "IOTEDGE_IOTHUBHOSTNAME=iothubtest1mk.azure-devices.net",
+                "IOTEDGE_WORKLOADURI=unix:///var/run/iotedge/workload.sock",
+                "IOTEDGE_MODULEGENERATIONID=636672829613278709",
+                "IOTEDGE_AUTHSCHEME=sasToken",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+             */
+            String edgedUri = "unix:///var/run/iotedge/workload.sock";//envVariables.get(IotEdgedUriVariableName);
+            String deviceId = "edgeDevice1";//envVariables.get(DeviceIdVariableName);
+            String moduleId = "simulated-device-3";//envVariables.get(ModuleIdVariableName);
+            String hostname = "iothubtest1mk.azure-devices.net";//envVariables.get(IotHubHostnameVariableName);
+            String authScheme = "sasToken";//envVariables.get(AuthSchemeVariableName);
+            String gatewayHostname = "ubuntu-bionic";//envVariables.get(GatewayHostnameVariableName);
+            String generationId = "636672829613278709";//envVariables.get(ModuleGenerationIdVariableName);
 
             if (edgedUri == null)
             {
