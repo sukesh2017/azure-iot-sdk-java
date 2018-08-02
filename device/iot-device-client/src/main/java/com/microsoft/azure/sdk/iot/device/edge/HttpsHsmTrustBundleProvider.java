@@ -10,6 +10,7 @@ import com.microsoft.azure.sdk.iot.device.hsm.parser.TrustBundleResponse;
 import com.microsoft.azure.sdk.iot.device.hsm.HsmException;
 import com.microsoft.azure.sdk.iot.device.hsm.HttpsHsmClient;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -31,7 +32,7 @@ public class HttpsHsmTrustBundleProvider implements TrustBundleProvider
      * @throws HsmException if the HSM rejects the request for the trustbundle
      * @throws UnsupportedEncodingException if utf-8 is not supported
      */
-    public String getTrustBundleCerts(String providerUri, String apiVersion) throws URISyntaxException, TransportException, MalformedURLException, HsmException, UnsupportedEncodingException
+    public String getTrustBundleCerts(String providerUri, String apiVersion) throws URISyntaxException, TransportException, IOException, HsmException
     {
         // Codes_SRS_TRUSTBUNDLEPROVIDER_34_001: [This function shall create an HttpsHsmClient using the provided provider uri.]
         HttpsHsmClient httpsHsmClient = new HttpsHsmClient(providerUri);
