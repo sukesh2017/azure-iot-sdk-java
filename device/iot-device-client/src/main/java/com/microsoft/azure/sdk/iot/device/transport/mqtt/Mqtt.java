@@ -84,6 +84,7 @@ abstract public class Mqtt implements MqttCallback
         this.mqttConnection = mqttConnection;
         this.allReceivedMessages = mqttConnection.getAllReceivedMessages();
         this.mqttLock = mqttConnection.getMqttLock();
+        this.publishLock = new Object();
         this.userSpecifiedSASTokenExpiredOnRetry = false;
         this.listener = listener;
         this.messageListener = messageListener;
