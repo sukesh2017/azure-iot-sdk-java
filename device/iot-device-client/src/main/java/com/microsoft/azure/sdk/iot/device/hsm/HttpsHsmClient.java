@@ -91,7 +91,7 @@ public class HttpsHsmClient
      * @throws URISyntaxException If the request URI is not a valid URI
      * @throws HsmException If there was a problem interacting with the HSM
      */
-    public SignResponse sign(String apiVersion, String moduleName, SignRequest signRequest, String generationId) throws IOException, TransportException, URISyntaxException, HsmException
+    public SignResponse sign(String apiVersion, String moduleName, SignRequest signRequest, String generationId) throws IOException, TransportException, HsmException
     {
         // Codes_SRS_HSMHTTPCLIENT_34_002: [This function shall build an http request with the url in the format
         // <base url>/modules/<url encoded name>/genid/<url encoded gen id>/sign?api-version=<url encoded api version>.]
@@ -179,7 +179,7 @@ public class HttpsHsmClient
         }
     }
 
-    private HttpsResponse sendRequestBasedOnScheme(HttpsRequest httpsRequest, String url, String path, String apiVersion, String host) throws TransportException, IOException, URISyntaxException
+    private HttpsResponse sendRequestBasedOnScheme(HttpsRequest httpsRequest, String url, String path, String apiVersion, String host) throws TransportException, IOException
     {
         if (scheme.equalsIgnoreCase(UNIX_SCHEME) || scheme.equalsIgnoreCase(HTTPS_SCHEME) || scheme.equalsIgnoreCase(HTTP_SCHEME))
         {
@@ -214,7 +214,7 @@ public class HttpsHsmClient
      * @throws IOException If the unix socket cannot be reached
      * @throws URISyntaxException the the url cannot be parsed
      */
-    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String httpRequestPath, String httpRequestQueryString, String unixSocketAddress) throws IOException, URISyntaxException
+    private static HttpsResponse sendHttpRequestUsingUnixSocket(HttpsRequest httpsRequest, String httpRequestPath, String httpRequestQueryString, String unixSocketAddress) throws IOException
     {
         UnixSocketChannel channel = null;
         HttpsResponse response = null;

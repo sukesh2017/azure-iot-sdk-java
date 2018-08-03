@@ -226,29 +226,45 @@ public class ModuleClient extends InternalClient
                 throw new ModuleClientException("Could not use Hsm Signature Provider", e);
             }
 
-            try
+            int hsmWorkCompletionAttempt = 0;
+            while (true) //excaped by either throwing, or succeeding in communicating with hsm
             {
-                //Codes_SRS_MODULECLIENT_34_017: [This function shall create an authentication provider using the created
-                // signature provider, and the environment variables for deviceid, moduleid, hostname, gatewayhostname,
-                // and the default time for tokens to live and the default sas token buffer time.]
-                IotHubAuthenticationProvider iotHubAuthenticationProvider = IotHubSasTokenHsmAuthenticationProvider.create(signatureProvider, deviceId, moduleId, hostname, gatewayHostname, generationId, DEFAULT_SAS_TOKEN_TIME_TO_LIVE_SECONDS, DEFAULT_SAS_TOKEN_BUFFER_PERCENTAGE);
-
-                //Codes_SRS_MODULECLIENT_34_018: [This function shall return a new ModuleClient instance built from the created authentication provider and the provided protocol.]
-                ModuleClient moduleClient = new ModuleClient(iotHubAuthenticationProvider, protocol, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
-
-                if (gatewayHostname != null && !gatewayHostname.isEmpty())
+                try
                 {
-                    //Codes_SRS_MODULECLIENT_34_032: [This function shall retrieve the trust bundle from the hsm and set them in the module client.]
-                    TrustBundleProvider trustBundleProvider = new HttpsHsmTrustBundleProvider();
-                    String trustCertificates = trustBundleProvider.getTrustBundleCerts(edgedUri, DEFAULT_API_VERSION);
-                    moduleClient.setTrustedCertificates(trustCertificates);
-                }
+                    //Codes_SRS_MODULECLIENT_34_017: [This function shall create an authentication provider using the created
+                    // signature provider, and the environment variables for deviceid, moduleid, hostname, gatewayhostname,
+                    // and the default time for tokens to live and the default sas token buffer time.]
+                    IotHubAuthenticationProvider iotHubAuthenticationProvider = IotHubSasTokenHsmAuthenticationProvider.create(signatureProvider, deviceId, moduleId, hostname, gatewayHostname, generationId, DEFAULT_SAS_TOKEN_TIME_TO_LIVE_SECONDS, DEFAULT_SAS_TOKEN_BUFFER_PERCENTAGE);
 
-                return moduleClient;
-            }
-            catch (IOException | TransportException | HsmException | URISyntaxException e)
-            {
-                throw new ModuleClientException(e);
+                    //Codes_SRS_MODULECLIENT_34_018: [This function shall return a new ModuleClient instance built from the created authentication provider and the provided protocol.]
+                    ModuleClient moduleClient = new ModuleClient(iotHubAuthenticationProvider, protocol, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
+
+                    if (gatewayHostname != null && !gatewayHostname.isEmpty())
+                    {
+                        //Codes_SRS_MODULECLIENT_34_032: [This function shall retrieve the trust bundle from the hsm and set them in the module client.]
+                        TrustBundleProvider trustBundleProvider = new HttpsHsmTrustBundleProvider();
+                        String trustCertificates = trustBundleProvider.getTrustBundleCerts(edgedUri, DEFAULT_API_VERSION);
+                        moduleClient.setTrustedCertificates(trustCertificates);
+                    }
+
+                    //escapes the while loop, hsm work has been completed
+                    return moduleClient;
+                }
+                catch (HsmException | URISyntaxException e)
+                {
+                    throw new ModuleClientException("Encountered non-retryable exception while communicating with hsm", e);
+                }
+                catch (IOException | TransportException e)
+                {
+                    if (hsmWorkCompletionAttempt >= 4)
+                    {
+                        throw new ModuleClientException("Failed to communicate with HSM too many times", e);
+                    }
+
+                    System.out.println("Encountered retryable exception while communicating with hsm, retrying...");
+                    e.printStackTrace();
+                    hsmWorkCompletionAttempt++;
+                }
             }
         }
     }
