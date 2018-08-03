@@ -217,6 +217,10 @@ abstract public class Mqtt implements MqttCallback
 
                 //Codes_SRS_Mqtt_25_014: [The function shall publish message payload on the publishTopic specified to the IoT Hub given in the configuration.]
                 IMqttDeliveryToken publishToken = this.mqttConnection.getMqttAsyncClient().publish(publishTopic, mqttMessage);
+
+                System.out.println("####################Delivery pending for mqtt " + publishToken.getMessageId());
+
+
                 this.unacknowledgedSentMessages.put(publishToken.getMessageId(), message);
             }
             catch (MqttException e)
@@ -377,6 +381,8 @@ abstract public class Mqtt implements MqttCallback
     {
         if (this.listener != null)
         {
+            System.out.println("####################Delivery complete for mqtt " + iMqttDeliveryToken.getMessageId());
+
             if (this.unacknowledgedSentMessages.containsKey(iMqttDeliveryToken.getMessageId()))
             {
                 Message deliveredMessage = this.unacknowledgedSentMessages.get(iMqttDeliveryToken.getMessageId());
