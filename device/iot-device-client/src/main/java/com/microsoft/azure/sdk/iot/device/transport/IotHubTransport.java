@@ -108,7 +108,6 @@ public class IotHubTransport implements IotHubListener
         {
             //Codes_SRS_IOTHUBTRANSPORT_34_004: [This function shall retrieve a packet from the inProgressPackets
             // queue with the message id from the provided message if there is one.]
-            System.out.println("!!!!!!!!!!!!!Checking inProgress for message :" + message.getMessageId());
             packet = inProgressPackets.remove(message.getMessageId());
         }
 
@@ -121,11 +120,9 @@ public class IotHubTransport implements IotHubListener
                 // packet to OK_EMPTY and add it to the callbacks queue.]
                 packet.setStatus(IotHubStatusCode.OK_EMPTY);
                 this.addToCallbackQueue(packet);
-                System.out.println("!!!!!!!!!!!!!message :" + message.getMessageId() + " finished as expected");
             }
             else
             {
-                System.out.println("!!!!!!!!!!!!!message:" + message.getMessageId() + " did not finished as expected");
                 e.printStackTrace();
                 if (e instanceof TransportException)
                 {
@@ -845,18 +842,12 @@ public class IotHubTransport implements IotHubListener
         boolean messageAckExpected = !(message instanceof IotHubTransportMessage
                 && !((IotHubTransportMessage) message).isMessageAckNeeded(this.defaultConfig.getProtocol()));
 
-        if (!messageAckExpected)
-        {
-            System.out.println("!!!!!!!!!!!ack not needed for type: " + ((IotHubTransportMessage) message).getDeviceOperationType());
-        }
-
         try
         {
             if (messageAckExpected)
             {
                 synchronized (this.inProgressMessagesLock)
                 {
-                    System.out.println("!!!!!!!!!!!Waiting for message " + message.getMessageId() + " to be acked...");
                     this.inProgressPackets.put(message.getMessageId(), packet);
                 }
             }
@@ -869,7 +860,6 @@ public class IotHubTransport implements IotHubListener
             {
                 //Codes_SRS_IOTHUBTRANSPORT_34_074: [If the response from sending is not OK or OK_EMPTY, this function
                 // shall invoke handleMessageException with that message.]
-                System.out.println("!!!!!!!!!!!!!UNEXPECTEDERROR status code: " + statusCode);
                 this.handleMessageException(this.inProgressPackets.remove(message.getMessageId()), IotHubStatusCode.getConnectionStatusException(statusCode, ""));
             }
             else if (!messageAckExpected)
@@ -888,7 +878,6 @@ public class IotHubTransport implements IotHubListener
             {
                 synchronized (this.inProgressMessagesLock)
                 {
-                    System.out.println("!!!!!!!!!!!!!UNEXPECTEDERROR: ");
                     transportException.printStackTrace();
                     outboundPacket = this.inProgressPackets.remove(message.getMessageId());
                 }
