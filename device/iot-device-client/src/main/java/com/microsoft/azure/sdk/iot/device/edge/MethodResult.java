@@ -36,10 +36,10 @@ public class MethodResult
         return this.status;
     }
 
-    public Object getPayloadObject()
-    {
-        return this.payload;
-    }
+    //public Object getPayloadObject()
+    //{
+    //    return this.payload;
+    //}
 
     public String getPayload()
     {
