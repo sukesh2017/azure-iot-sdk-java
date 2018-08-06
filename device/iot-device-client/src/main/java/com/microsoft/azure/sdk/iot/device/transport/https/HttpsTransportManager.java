@@ -186,6 +186,8 @@ public class HttpsTransportManager implements IotHubTransportManager
      */
     public MethodResult invokeMethod(MethodRequest methodRequest, String deviceId, String moduleId) throws IOException, URISyntaxException, TransportException
     {
+        System.out.println("Sending method request with payload: ");
+        System.out.println(methodRequest.payload);
         URI uri;
         if (moduleId == null || moduleId.isEmpty())
         {

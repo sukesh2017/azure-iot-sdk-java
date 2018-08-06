@@ -32,7 +32,7 @@ public class MethodRequest
     private static final String PAYLOAD_KEY_NAME = "payload";
     @Expose(serialize = true, deserialize = false)
     @SerializedName(PAYLOAD_KEY_NAME)
-    private String payload;
+    public String payload;
 
     /**
      * Constructor for a MethodRequest. Uses default responseTimeout and connectionTimeout which is to never timeout
