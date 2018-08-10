@@ -176,6 +176,8 @@ public final class AmqpsDeviceAuthenticationCBS extends AmqpsDeviceAuthenticatio
                         int propertyValue = (int) entry.getValue();
                         if (propertyValue == 200)
                         {
+                            amqpsMessage.acknowledge(AmqpsMessage.ACK_TYPE.COMPLETE);
+
                             // Codes_SRS_AMQPSDEVICEAUTHENTICATIONCBS_12_029: [The function shall return true If both the correlationID and status code matches.]
                             return true;
                         }

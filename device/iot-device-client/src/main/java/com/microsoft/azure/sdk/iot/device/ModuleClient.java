@@ -150,7 +150,7 @@ public class ModuleClient extends InternalClient
             ModuleClient moduleClient = null;
             try
             {
-                moduleClient = new ModuleClient(connectionString, protocol);
+                moduleClient = new ModuleClient(connectionString, IotHubClientProtocol.AMQPS);
             }
             catch (URISyntaxException e)
             {
