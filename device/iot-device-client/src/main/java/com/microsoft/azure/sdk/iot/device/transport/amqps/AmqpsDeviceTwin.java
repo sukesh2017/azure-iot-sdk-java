@@ -61,6 +61,8 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
     AmqpsDeviceTwin(DeviceClientConfig deviceClientConfig) throws IllegalArgumentException
     {
         // Codes_SRS_AMQPSDEVICETWIN_34_051: [This constructor shall call super with the provided user agent string.]
+        // Codes_SRS_AMQPSDEVICETWIN_34_034: [If a moduleId is present, the constructor shall set the sender and receiver endpoint path to IoTHub specific values for module communication.]
+        // Codes_SRS_AMQPSDEVICETWIN_12_002: [The constructor shall set the sender and receiver endpoint path to IoTHub specific values.]
         super(deviceClientConfig, SENDER_LINK_ENDPOINT_PATH, RECEIVER_LINK_ENDPOINT_PATH,
                 SENDER_LINK_ENDPOINT_PATH_MODULES, RECEIVER_LINK_ENDPOINT_PATH_MODULES,
                 SENDER_LINK_TAG_PREFIX, RECEIVER_LINK_TAG_PREFIX);
@@ -70,10 +72,6 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
         String moduleId = this.deviceClientConfig.getModuleId();
         if (moduleId != null && !moduleId.isEmpty())
         {
-            // Codes_SRS_AMQPSDEVICETWIN_34_034: [If a moduleId is present, the constructor shall set the sender and receiver endpoint path to IoTHub specific values for module communication.]
-            this.senderLinkEndpointPath = SENDER_LINK_ENDPOINT_PATH_MODULES;
-            this.receiverLinkEndpointPath = RECEIVER_LINK_ENDPOINT_PATH_MODULES;
-
             // Codes_SRS_AMQPSDEVICETWIN_34_035: [If a moduleId is present, the constructor shall concatenate a sender specific prefix including the moduleId to the sender link tag's current value.]
             this.senderLinkTag = SENDER_LINK_TAG_PREFIX + this.deviceClientConfig.getDeviceId() + "/" + moduleId + "-" + senderLinkTag;
             this.receiverLinkTag = RECEIVER_LINK_TAG_PREFIX + this.deviceClientConfig.getDeviceId() + "/" + moduleId + "-" + receiverLinkTag;
@@ -84,10 +82,6 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
         }
         else
         {
-            // Codes_SRS_AMQPSDEVICETWIN_12_002: [The constructor shall set the sender and receiver endpoint path to IoTHub specific values.]
-            this.senderLinkEndpointPath = SENDER_LINK_ENDPOINT_PATH;
-            this.receiverLinkEndpointPath = RECEIVER_LINK_ENDPOINT_PATH;
-
             // Codes_SRS_AMQPSDEVICETWIN_12_003: [The constructor shall concatenate a sender specific prefix to the sender link tag's current value.]
             this.senderLinkTag = SENDER_LINK_TAG_PREFIX + this.deviceClientConfig.getDeviceId() + "-" + senderLinkTag;
             // Codes_SRS_AMQPSDEVICETWIN_12_004: [The constructor shall concatenate a receiver specific prefix to the receiver link tag's current value.]
@@ -175,6 +169,7 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
         AmqpsMessage amqpsMessage = super.getMessageFromReceiverLink(linkName);
         if (amqpsMessage != null)
         {
+            System.out.println("!@#!!@$!FOUND TWIN MESSAGE ON RECEIVER LINK");
             // Codes_SRS_AMQPSDEVICETWIN_12_013: [The function shall set the MessageType to DEVICE_TWIN if the super function returned not null.]
             amqpsMessage.setAmqpsMessageType(MessageType.DEVICE_TWIN);
             amqpsMessage.setDeviceClientConfig(this.deviceClientConfig);
@@ -248,30 +243,14 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
      * @return the corresponding IoT Hub message.
      */
     @Override
-    protected Message protonMessageToIoTHubMessage(MessageImpl protonMsg) throws TransportException
+    protected IotHubTransportMessage protonMessageToIoTHubMessage(MessageImpl protonMsg) throws TransportException
     {
-        byte[] msgBody;
-
-        Data d = (Data) protonMsg.getBody();
-        if (d != null)
-        {
-            // Codes_SRS_AMQPSDEVICETWIN_12_018: [The function shall shall create a new buffer for message body and copy the proton message body to it.]
-            Binary b = d.getValue();
-            msgBody = new byte[b.getLength()];
-            ByteBuffer buffer = b.asByteBuffer();
-            buffer.get(msgBody);
-        }
-        else
-        {
-            // Codes_SRS_AMQPSDEVICETWIN_12_017: [The function shall create a new empty buffer for message body if the proton message body is null.]
-            msgBody = new byte[0];
-        }
-
-        // Codes_SRS_AMQPSDEVICETWIN_12_019: [The function shall create a new IotHubTransportMessage using the Proton message body and set the message type to DEVICE_TWIN.]
-        IotHubTransportMessage iotHubTransportMessage = new IotHubTransportMessage(msgBody, MessageType.DEVICE_TWIN);
-        iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_UNKNOWN);
+        IotHubTransportMessage message = super.protonMessageToIoTHubMessage(protonMsg);
+        message.setMessageType(MessageType.DEVICE_TWIN);
+        message.setDeviceOperationType(DEVICE_OPERATION_UNKNOWN);
 
         MessageAnnotations messageAnnotations = protonMsg.getMessageAnnotations();
+        System.out.println("^^^^^^^^Loooking for message annotations");
         if (messageAnnotations != null)
         {
             for (Map.Entry<Symbol, Object> entry : messageAnnotations.getValue().entrySet())
@@ -279,22 +258,28 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
                 Symbol key = entry.getKey();
                 Object value = entry.getValue();
 
+                System.out.println("AMQP TWIN ANNOTATION: " + key + " with value: " + value);
+
                 // Codes_SRS_AMQPSDEVICETWIN_12_020: [The function shall read the proton message annotations and set the status to the value of STATUS key.]
                 if (key.toString().equals(MESSAGE_ANNOTATION_FIELD_KEY_STATUS))
                 {
-                    iotHubTransportMessage.setStatus(value.toString());
+                    message.setStatus(value.toString());
                 }
                 // Codes_SRS_AMQPSDEVICETWIN_12_021: [The function shall read the proton message annotations and set the version to the value of VERSION key.]
                 else if (key.toString().equals(MESSAGE_ANNOTATION_FIELD_KEY_VERSION))
                 {
-                    iotHubTransportMessage.setVersion(value.toString());
+                    message.setVersion(value.toString());
                 }
                 // Codes_SRS_AMQPSDEVICETWIN_12_022: [The function shall read the proton message annotations and set the operation type to SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE if the PROPERTIES_DESIRED resource exist.]
                 else if (key.toString().equals(MESSAGE_ANNOTATION_FIELD_KEY_RESOURCE) && value.toString().equals(MESSAGE_ANNOTATION_FIELD_VALUE_PROPERTIES_DESIRED))
                 {
-                    iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
+                    message.setDeviceOperationType(DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
                 }
             }
+        }
+        else
+        {
+            System.out.println("^^^^^^^^None found");
         }
 
         Properties properties = protonMsg.getProperties();
@@ -303,7 +288,7 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
             if (properties.getCorrelationId() != null)
             {
                 // Codes_SRS_AMQPSDEVICETWIN_12_044: [The function shall set the IotHubTransportMessage correlationID to the proton correlationId.]
-                iotHubTransportMessage.setCorrelationId(properties.getCorrelationId().toString());
+                message.setCorrelationId(properties.getCorrelationId().toString());
 
                 // Codes_SRS_AMQPSDEVICETWIN_12_023: [The function shall find the proton correlation ID in the correlationIdList and if it is found, set the operation type to the related response.]
                 if (correlationIdList.containsKey(properties.getCorrelationId().toString()))
@@ -312,16 +297,16 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
                     switch (deviceOperations)
                     {
                         case DEVICE_OPERATION_TWIN_GET_REQUEST:
-                            iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_TWIN_GET_RESPONSE);
+                            message.setDeviceOperationType(DEVICE_OPERATION_TWIN_GET_RESPONSE);
                             break;
                         case DEVICE_OPERATION_TWIN_UPDATE_REPORTED_PROPERTIES_REQUEST:
-                            iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_TWIN_UPDATE_REPORTED_PROPERTIES_RESPONSE);
+                            message.setDeviceOperationType(DEVICE_OPERATION_TWIN_UPDATE_REPORTED_PROPERTIES_RESPONSE);
                             break;
                         case DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_REQUEST:
-                            iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
+                            message.setDeviceOperationType(DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
                             break;
                         case DEVICE_OPERATION_TWIN_UNSUBSCRIBE_DESIRED_PROPERTIES_REQUEST:
-                            iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_TWIN_UNSUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
+                            message.setDeviceOperationType(DEVICE_OPERATION_TWIN_UNSUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
                             break;
                         default:
                             TransportUtils.throwTransportExceptionWithIotHubServiceType(
@@ -335,50 +320,56 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
             else
             {
                 // Codes_SRS_AMQPSDEVICETWIN_12_024: [THe function shall set the operation type to SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE if the proton correlation ID is null.]
-                if (iotHubTransportMessage.getDeviceOperationType() == DEVICE_OPERATION_UNKNOWN)
+                if (message.getDeviceOperationType() == DEVICE_OPERATION_UNKNOWN)
                 {
-                    iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
+                    message.setDeviceOperationType(DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
                 }
             }
 
             // Codes_SRS_AMQPSDEVICETWIN_12_025: [The function shall copy the correlationId, messageId, To and userId properties to the IotHubTransportMessage properties.]
             if (properties.getMessageId() != null)
             {
-                iotHubTransportMessage.setMessageId(properties.getMessageId().toString());
+                message.setMessageId(properties.getMessageId().toString());
             }
 
             if (properties.getTo() != null)
             {
-                iotHubTransportMessage.setProperty(AMQPS_APP_PROPERTY_PREFIX + TO_KEY, properties.getTo());
+                message.setProperty(AMQPS_APP_PROPERTY_PREFIX + TO_KEY, properties.getTo());
             }
 
             if (properties.getUserId() != null)
             {
-                iotHubTransportMessage.setProperty(AMQPS_APP_PROPERTY_PREFIX + USER_ID_KEY, properties.getUserId().toString());
+                message.setProperty(AMQPS_APP_PROPERTY_PREFIX + USER_ID_KEY, properties.getUserId().toString());
             }
         }
 
         // Codes_SRS_AMQPSDEVICETWIN_12_026: [The function shall copy the Proton application properties to IotHubTransportMessage properties excluding the reserved property names.]
+        System.out.println("^^^^^^^^Looking at application properties");
         if (protonMsg.getApplicationProperties() != null)
         {
             Map<String, Object> applicationProperties = protonMsg.getApplicationProperties().getValue();
             for (Map.Entry<String, Object> entry : applicationProperties.entrySet())
             {
+                System.out.println("TWIN APP PROPERTY: " + entry.getKey() + " with value: " + entry.getValue());
                 String propertyKey = entry.getKey();
                 if (propertyKey.equals(INPUT_NAME_PROPERTY_KEY))
                 {
                     // Codes_SRS_AMQPSDEVICETELEMETRY_34_053: [If the amqp message contains an application property of
                     // "x-opt-input-name", this function shall assign its value to the IotHub message's input name.]
-                    iotHubTransportMessage.setInputName(entry.getValue().toString());
+                    message.setInputName(entry.getValue().toString());
                 }
                 else if (!MessageProperty.RESERVED_PROPERTY_NAMES.contains(propertyKey))
                 {
-                    iotHubTransportMessage.setProperty(entry.getKey(), entry.getValue().toString());
+                    message.setProperty(entry.getKey(), entry.getValue().toString());
                 }
             }
         }
+        else
+        {
+            System.out.println("^^^^^^^^None found...");
+        }
 
-        return iotHubTransportMessage;
+        return message;
     }
 
     /**

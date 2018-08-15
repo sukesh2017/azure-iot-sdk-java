@@ -210,27 +210,10 @@ public final class AmqpsDeviceMethods extends AmqpsDeviceOperations
      * @return the corresponding IoT Hub message.
      */
     @Override
-    protected Message protonMessageToIoTHubMessage(MessageImpl protonMsg)
+    protected IotHubTransportMessage protonMessageToIoTHubMessage(MessageImpl protonMsg) throws TransportException
     {
-        byte[] msgBody;
-
-        Data d = (Data) protonMsg.getBody();
-        if (d != null)
-        {
-            // Codes_SRS_AMQPSDEVICEMETHODS_12_018: [The function shall shall create a new buffer for message body and copy the proton message body to it.]
-            Binary b = d.getValue();
-            msgBody = new byte[b.getLength()];
-            ByteBuffer buffer = b.asByteBuffer();
-            buffer.get(msgBody);
-        }
-        else
-        {
-            // Codes_SRS_AMQPSDEVICEMETHODS_12_017: [The function shall create a new empty buffer for message body if the proton message body is null.]
-            msgBody = new byte[0];
-        }
-
-        // Codes_SRS_AMQPSDEVICEMETHODS_12_019: [The function shall create a new IotHubTransportMessage using the Proton message body and set the message type to DEVICE_METHODS.]
-        IotHubTransportMessage iotHubTransportMessage = new IotHubTransportMessage(msgBody, MessageType.DEVICE_METHODS);
+        IotHubTransportMessage message = super.protonMessageToIoTHubMessage(protonMsg);
+        message.setMessageType(MessageType.DEVICE_METHODS);
 
         // Codes_SRS_AMQPSDEVICEMETHODS_12_025: [The function shall copy the correlationId, messageId, To and userId properties to the IotHubTransportMessage properties.]
         Properties properties = protonMsg.getProperties();
@@ -238,22 +221,22 @@ public final class AmqpsDeviceMethods extends AmqpsDeviceOperations
         {
             if (properties.getCorrelationId() != null)
             {
-                iotHubTransportMessage.setRequestId(properties.getCorrelationId().toString());
+                message.setRequestId(properties.getCorrelationId().toString());
             }
 
             if (properties.getMessageId() != null)
             {
-                iotHubTransportMessage.setMessageId(properties.getMessageId().toString());
+                message.setMessageId(properties.getMessageId().toString());
             }
 
             if (properties.getTo() != null)
             {
-                iotHubTransportMessage.setProperty(AMQPS_APP_PROPERTY_PREFIX + TO_KEY, properties.getTo());
+                message.setProperty(AMQPS_APP_PROPERTY_PREFIX + TO_KEY, properties.getTo());
             }
 
             if (properties.getUserId() != null)
             {
-                iotHubTransportMessage.setProperty(AMQPS_APP_PROPERTY_PREFIX + USER_ID_KEY, properties.getUserId().toString());
+                message.setProperty(AMQPS_APP_PROPERTY_PREFIX + USER_ID_KEY, properties.getUserId().toString());
             }
         }
 
@@ -268,7 +251,7 @@ public final class AmqpsDeviceMethods extends AmqpsDeviceOperations
 
                 if (propertyKey.equals(APPLICATION_PROPERTY_KEY_IOTHUB_METHOD_NAME))
                 {
-                    iotHubTransportMessage.setMethodName(entry.getValue().toString());
+                    message.setMethodName(entry.getValue().toString());
                 }
                 else
                 {
@@ -276,19 +259,19 @@ public final class AmqpsDeviceMethods extends AmqpsDeviceOperations
                     {
                         // Codes_SRS_AMQPSDEVICETELEMETRY_34_052: [If the amqp message contains an application property of
                         // "x-opt-input-name", this function shall assign its value to the IotHub message's input name.]
-                        iotHubTransportMessage.setInputName(entry.getValue().toString());
+                        message.setInputName(entry.getValue().toString());
                     }
                     else if (!MessageProperty.RESERVED_PROPERTY_NAMES.contains(propertyKey))
                     {
-                        iotHubTransportMessage.setProperty(entry.getKey(), entry.getValue().toString());
+                        message.setProperty(entry.getKey(), entry.getValue().toString());
                     }
                 }
             }
         }
         // Codes_SRS_AMQPSDEVICEMETHODS_12_046: [The function shall set the device operation type to DEVICE_OPERATION_METHOD_RECEIVE_REQUEST on IotHubTransportMessage.]
-        iotHubTransportMessage.setDeviceOperationType(DeviceOperations.DEVICE_OPERATION_METHOD_RECEIVE_REQUEST);
+        message.setDeviceOperationType(DeviceOperations.DEVICE_OPERATION_METHOD_RECEIVE_REQUEST);
 
-        return iotHubTransportMessage;
+        return message;
     }
 
     /**

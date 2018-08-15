@@ -9,8 +9,11 @@ import com.microsoft.azure.sdk.iot.device.Message;
 import com.microsoft.azure.sdk.iot.device.MessageType;
 import com.microsoft.azure.sdk.iot.device.exceptions.ProtocolException;
 import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubTransportMessage;
 import com.microsoft.azure.sdk.iot.device.transport.TransportUtils;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
@@ -18,6 +21,8 @@ import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.*;
 import org.apache.qpid.proton.message.impl.MessageImpl;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -59,7 +64,7 @@ public class AmqpsDeviceOperations
      *
      * @throws IllegalArgumentException if the provided deviceClientConfig is null
      */
-    AmqpsDeviceOperations(DeviceClientConfig deviceClientConfig, String senderLinkEndpointPath, String receiverLinkEndpointpath,
+    AmqpsDeviceOperations(DeviceClientConfig deviceClientConfig, String senderLinkEndpointPathDevices, String receiverLinkEndpointPathDevices,
                           String senderLinkEndpointPathModules, String receiverLinkEndpointPathModules,
                           String senderLinkTagPrefix, String receiverLinkTagPrefix) throws IllegalArgumentException
     {
@@ -110,8 +115,8 @@ public class AmqpsDeviceOperations
         }
         else
         {
-            this.senderLinkEndpointPath = senderLinkEndpointPath;
-            this.receiverLinkEndpointPath = receiverLinkEndpointpath;
+            this.senderLinkEndpointPath = senderLinkEndpointPathDevices;
+            this.receiverLinkEndpointPath = receiverLinkEndpointPathDevices;
 
             this.senderLinkTag = senderLinkTagPrefix + deviceId + "-" + senderLinkTag;
             this.receiverLinkTag = receiverLinkTagPrefix + deviceId + "-" + receiverLinkTag;
@@ -443,10 +448,64 @@ public class AmqpsDeviceOperations
      * @return the converted message
      * @throws TransportException if conversion fails.
      */
-    protected Message protonMessageToIoTHubMessage(MessageImpl protonMsg) throws TransportException
+    protected IotHubTransportMessage protonMessageToIoTHubMessage(MessageImpl protonMsg) throws TransportException
     {
-        // Codes_SRS_AMQPSDEVICEOPERATIONS_12_041: [The prototype function shall return null.]
-        return null;
+        byte[] msgBody;
+
+        Data d = (Data) protonMsg.getBody();
+        if (d != null)
+        {
+            Binary b = d.getValue();
+            msgBody = new byte[b.getLength()];
+            ByteBuffer buffer = b.asByteBuffer();
+            buffer.get(msgBody);
+        }
+        else
+        {
+            msgBody = new byte[0];
+        }
+        IotHubTransportMessage iothubMessage = null;
+
+        try
+        {
+            iothubMessage = new IotHubTransportMessage(new String(msgBody, "utf-8"));
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new TransportException("Error during conversion from proton message to iot hub message: could not utf-8 decode the message body");
+        }
+
+        if (protonMsg.getApplicationProperties() != null && protonMsg.getApplicationProperties().getValue() != null)
+        {
+            Map<String, Object> appProps = protonMsg.getApplicationProperties().getValue();
+            for (String prop : appProps.keySet())
+            {
+                System.out.println("XXXXXXXXXXXXXXXXXXXXX Application property: " + prop + " with value: " + appProps.get(prop));
+            }
+        }
+
+        if (protonMsg.getMessageAnnotations() != null && protonMsg.getMessageAnnotations().getValue() != null)
+        {
+            Map<Symbol, Object> appAnnotations = protonMsg.getMessageAnnotations().getValue();
+            for (Symbol prop : appAnnotations.keySet())
+            {
+                System.out.println("XXXXXXXXXXXXXXXXXXXXX Annotation: " + prop + " with value: " + appAnnotations.get(prop));
+            }
+
+        }
+
+        if (protonMsg.getApplicationProperties() != null && protonMsg.getApplicationProperties().getValue() != null)
+        {
+            Map<String, Object> protonMessageApplicationProperties = protonMsg.getApplicationProperties().getValue();
+
+            if (protonMessageApplicationProperties.containsKey("status-code"))
+            {
+                System.out.println("**********FOUND THE STATUS CODE!!!!!");
+                iothubMessage.setStatus(protonMessageApplicationProperties.get("status-code").toString());
+            }
+        }
+
+        return iothubMessage;
     }
 
     /**
