@@ -574,25 +574,28 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
             // Codes_SRS_AMQPSIOTHUBCONNECTION_15_050: [All the listeners shall be notified that a message was received from the server.]
             try
             {
-                if (amqpsMessage.getMessageAnnotations() != null)
+                if (amqpsMessage.getAmqpsMessageType() == MessageType.DEVICE_TWIN)
                 {
-                    for (Map.Entry<Symbol, Object> entry : amqpsMessage.getMessageAnnotations().getValue().entrySet())
+                    if (amqpsMessage.getMessageAnnotations() != null)
                     {
-                        Symbol key = entry.getKey();
-                        Object value = entry.getValue();
+                        for (Map.Entry<Symbol, Object> entry : amqpsMessage.getMessageAnnotations().getValue().entrySet())
+                        {
+                            Symbol key = entry.getKey();
+                            Object value = entry.getValue();
 
-                        System.out.println("AMQP ANNOTATION: " + key + " with value: " + value);
+                            System.out.println("AMQP ANNOTATION: " + key + " with value: " + value);
+                        }
                     }
-                }
 
-                if (amqpsMessage.getApplicationProperties() != null)
-                {
-                    for (Map.Entry<String, Object> entry : amqpsMessage.getApplicationProperties().getValue().entrySet())
+                    if (amqpsMessage.getApplicationProperties() != null)
                     {
-                        String key = entry.getKey();
-                        Object value = entry.getValue();
+                        for (Map.Entry<String, Object> entry : amqpsMessage.getApplicationProperties().getValue().entrySet())
+                        {
+                            String key = entry.getKey();
+                            Object value = entry.getValue();
 
-                        System.out.println("AMQP ANNOTATION: " + key + " with value: " + value);
+                            System.out.println("'AMQP APPLICATION PROPERTY: " + key + " with value: " + value);
+                        }
                     }
                 }
 
