@@ -13,6 +13,7 @@ import com.microsoft.azure.sdk.iot.device.transport.IotHubListener;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubTransportConnection;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubTransportMessage;
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.*;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -29,6 +30,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.*;
+
+import static com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceOperations.DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE;
 
 /**
  * An AMQPS IotHub connection between a device and an IoTHub. This class contains functionality for sending/receiving
@@ -571,6 +574,28 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
             // Codes_SRS_AMQPSIOTHUBCONNECTION_15_050: [All the listeners shall be notified that a message was received from the server.]
             try
             {
+                if (amqpsMessage.getMessageAnnotations() != null)
+                {
+                    for (Map.Entry<Symbol, Object> entry : amqpsMessage.getMessageAnnotations().getValue().entrySet())
+                    {
+                        Symbol key = entry.getKey();
+                        Object value = entry.getValue();
+
+                        System.out.println("AMQP ANNOTATION: " + key + " with value: " + value);
+                    }
+                }
+
+                if (amqpsMessage.getApplicationProperties() != null)
+                {
+                    for (Map.Entry<String, Object> entry : amqpsMessage.getApplicationProperties().getValue().entrySet())
+                    {
+                        String key = entry.getKey();
+                        Object value = entry.getValue();
+
+                        System.out.println("AMQP ANNOTATION: " + key + " with value: " + value);
+                    }
+                }
+
                 this.messageReceivedFromServer(amqpsMessage);
             }
             catch (TransportException e)

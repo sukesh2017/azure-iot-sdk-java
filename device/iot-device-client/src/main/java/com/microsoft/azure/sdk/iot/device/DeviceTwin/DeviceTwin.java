@@ -75,6 +75,15 @@ public class DeviceTwin
                 IotHubTransportMessage dtMessage = (IotHubTransportMessage) message;
                 String status = dtMessage.getStatus();
 
+                if (status == null)
+                {
+                    System.out.println("############## Status is null ##############");
+                }
+                else
+                {
+                    System.out.println("############## Status is " + status + " ##############");
+                }
+
                 switch (dtMessage.getDeviceOperationType())
                 {
                     case DEVICE_OPERATION_TWIN_GET_RESPONSE:
