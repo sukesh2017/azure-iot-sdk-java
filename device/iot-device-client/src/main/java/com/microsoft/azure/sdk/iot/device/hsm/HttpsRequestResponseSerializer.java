@@ -139,7 +139,7 @@ public class HttpsRequestResponseSerializer
         if (statusLineParts.length != 3)
         {
             // Codes_SRS_HTTPREQUESTRESPONSESERIALIZER_34_006: [If the buffered reader's first line does not have the version, status code, and error reason split by a space, this function shall throw an IOException.]
-            throw new IOException("Status line is not valid.");
+            throw new IOException("Status line is not valid: " + statusLine);
         }
 
         String[] httpVersion = statusLineParts[0].split(ProtocolVersionSeparator);
