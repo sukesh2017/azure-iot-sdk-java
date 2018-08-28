@@ -265,7 +265,8 @@ public class ExportImportDeviceParser
 	/**
 	 * @param tags the tags to set
 	 */
-	public void setTags(TwinCollection tags) {
+	public void setTags(TwinCollection tags)
+    {
 		this.tags = tags;
 	}
 }

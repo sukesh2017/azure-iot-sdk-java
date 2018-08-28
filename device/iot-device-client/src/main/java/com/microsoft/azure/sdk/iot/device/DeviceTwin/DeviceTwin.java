@@ -78,7 +78,7 @@ public class DeviceTwin
                 if (status == null)
                 {
                     System.out.println("############## Status is null ##############");
-                    status = "200";
+                    //status = "200";
                 }
                 else
                 {

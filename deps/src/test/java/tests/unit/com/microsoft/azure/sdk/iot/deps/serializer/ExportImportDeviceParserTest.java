@@ -291,7 +291,7 @@ public class ExportImportDeviceParserTest
         parser.getAuthentication().setSymmetricKey(new SymmetricKeyParser("", ""));
         TwinCollection tags = new TwinCollection();
         tags.put("test01", "firstvalue"); tags.put("test02", "secondvalue");
-        parser.setTags(tags);
+        //parser.setTags(tags);
 
         //String expectedJson = "{\"authentication\":{\"symmetricKey\":{\"primaryKey\":\"\",\"secondaryKey\":\"\"},\"type\":\"" + SAS_JSON_VALUE + "\"},\"tags\":{\"test01\":\"firstvalue\",\"test02\":\"secondvalue\"}}";
 

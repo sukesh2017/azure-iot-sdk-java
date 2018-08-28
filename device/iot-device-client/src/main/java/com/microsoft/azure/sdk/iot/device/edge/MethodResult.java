@@ -36,25 +36,8 @@ public class MethodResult
         return this.status;
     }
 
-    public Object getPayloadObject()
+    public Object getPayload()
     {
         return this.payload;
-    }
-
-    public String getPayload()
-    {
-        // Codes_SRS_DIRECTMETHODRESULT_34_002: [This function shall return the saved status.]
-        if (this.payload instanceof String)
-        {
-            return (String) this.payload;
-        }
-        else if (this.payload instanceof byte[])
-        {
-            return new String((byte[]) this.payload);
-        }
-        else
-        {
-            return this.payload.toString();
-        }
     }
 }

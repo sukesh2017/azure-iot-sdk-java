@@ -235,6 +235,8 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
                 Symbol key = entry.getKey();
                 Object value = entry.getValue();
 
+                System.out.println("Message annotation found: " + key + " : " + value);
+
                 // Codes_SRS_AMQPSDEVICETWIN_12_020: [The function shall read the proton message annotations and set the status to the value of STATUS key.]
                 if (key.toString().equals(MESSAGE_ANNOTATION_FIELD_KEY_STATUS))
                 {
@@ -256,6 +258,16 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
         Properties properties = protonMsg.getProperties();
         if (properties != null)
         {
+            if (properties.getTo() != null)
+            {
+                System.out.println(properties.getTo());
+            }
+
+            if (properties.getMessageId() != null)
+            {
+                System.out.println(properties.getMessageId());
+            }
+
             if (properties.getCorrelationId() != null)
             {
                 // Codes_SRS_AMQPSDEVICETWIN_12_044: [The function shall set the IotHubTransportMessage correlationID to the proton correlationId.]
@@ -290,12 +302,18 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
             }
             else
             {
+                System.out.println("CORRELATION ID WAS NULL ON TWIN MESSAGE");
+
                 // Codes_SRS_AMQPSDEVICETWIN_12_024: [THe function shall set the operation type to SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE if the proton correlation ID is null.]
                 if (iotHubTransportMessage.getDeviceOperationType() == DEVICE_OPERATION_UNKNOWN)
                 {
                     iotHubTransportMessage.setDeviceOperationType(DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_RESPONSE);
                 }
             }
+        }
+        else
+        {
+            System.out.println("PROPERTIES WERE NULL ON TWIN MESSAGE");
         }
 
         return iotHubTransportMessage;
@@ -315,6 +333,7 @@ public final class AmqpsDeviceTwin extends AmqpsDeviceOperations
 
         if (deviceTwinMessage.getCorrelationId() != null)
         {
+            System.out.println("Setting correlation id onto proton message: " + UUID.fromString(deviceTwinMessage.getCorrelationId()));
             protonMessage.getProperties().setCorrelationId(UUID.fromString(deviceTwinMessage.getCorrelationId()));
 
             // Codes_SRS_AMQPSDEVICETWIN_12_045: [The function shall add the correlationId to the correlationIdList if it is not null.]

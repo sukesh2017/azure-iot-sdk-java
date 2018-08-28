@@ -399,8 +399,9 @@ public class ExportImportDevice
                 }
             }
         }
-        
-        parser.setTags(this.tags);
+
+        //TODO don't commit this!
+        //parser.setTags(this.tags);
 
         return parser;
     }
