@@ -336,14 +336,35 @@ public class MethodParser
                 {
                     jsonProperty.addProperty(CONNECT_TIMEOUT_IN_SECONDS_TAG, connectTimeout);
                 }
+
                 if(payload instanceof Map)
                 {
                     jsonProperty.add(PAYLOAD_TAG, ParserUtility.mapToJsonElement((Map<String, Object>) payload));
                 }
                 else
                 {
-                    jsonProperty.add(PAYLOAD_TAG, gson.toJsonTree(payload));
+                    try
+                    {
+                        if (payload instanceof String && new JsonParser().parse((String) payload).isJsonObject())
+                        {
+                            //This avoids unnecessary stringification of a valid json string
+                            JsonObject jsonStringObject = new JsonParser().parse(payload.toString()).getAsJsonObject();
+                            JsonElement baseImpl = gson.toJsonTree(payload);
+                            jsonProperty.add(PAYLOAD_TAG, jsonStringObject);
+                        }
+                        else
+                        {
+                            //default to stringifying
+                            jsonProperty.add(PAYLOAD_TAG, gson.toJsonTree(payload));
+                        }
+                    }
+                    catch (JsonSyntaxException e)
+                    {
+                        //default to stringifying
+                        jsonProperty.add(PAYLOAD_TAG, gson.toJsonTree(payload));
+                    }
                 }
+
                 return jsonProperty;
 
             case response:
