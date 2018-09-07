@@ -84,7 +84,7 @@ public class ProvisioningClientIT
     private ProvisioningServiceClient provisioningServiceClient = null;
     private RegistryManager registryManager = null;
 
-    private static final int INTERTEST_GUARDIAN_DELAY_MILLISECONDS = 2000;
+    private static final int INTERTEST_GUARDIAN_DELAY_MILLISECONDS = 0;
     private static final int OVERALL_TEST_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
     @Parameterized.Parameters(name = "{0}")

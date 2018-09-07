@@ -54,7 +54,7 @@ public class FileUploadIT extends MethodNameLoggingIntegrationTest
 
     private static final String IOT_HUB_CONNECTION_STRING_ENV_VAR_NAME = "IOTHUB_CONNECTION_STRING";
     private static String iotHubConnectionString = "";
-    private static final int INTERTEST_GUARDIAN_DELAY_MILLISECONDS = 2000;
+    private static final int INTERTEST_GUARDIAN_DELAY_MILLISECONDS = 0;
 
     // States of SDK
     private static RegistryManager registryManager;

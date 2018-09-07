@@ -72,7 +72,7 @@ public class DeviceMethodIT extends MethodNameLoggingIntegrationTest
     private static ArrayList<DeviceTestManager> deviceTestManagers;
 
     private static final int NUMBER_INVOKES_PARALLEL = 10;
-    private static final int INTERTEST_GUARDIAN_DELAY_MILLISECONDS = 2000;
+    private static final int INTERTEST_GUARDIAN_DELAY_MILLISECONDS = 0;
     // How much to wait until a message makes it to the server, in milliseconds
     private static final Integer SEND_TIMEOUT_MILLISECONDS = 60000;
 
